@@ -13,8 +13,9 @@ required.add_argument('-odb', '--OutputDB', required = True, help = "\n Name of 
 optional.add_argument('-t', '--Threads', required = False, default = 1, help = "\n Number of processors for Vsearch alignment\n")
 optional.add_argument('--SaveTemp', default=False, type=lambda x: (str(x).lower() == 'true'), help = "\nOption for \n")
 optional.add_argument('-id', '--idCutoffs', required = False, default = 1, help = "\n Option for")
-optional.add_argument('-re', '--reStructure', required = False, default = 1, help = "\n Option for")
 optional.add_argument('-pcv', '--ProportionForCV', required = False, default = 0.1, help = "\n Size of the reference data partition used for cross-validation")
+optional.add_argument('-hr', '--HighestRank', required = False, type=str, default = 'Class', help = "\n Analyze to King, Phyl, or Class? default Class")
+optional.add_argument('-re', '--reStructure', required = False, type=str, default = 'Family', help = "\n reLevels to Fam, Gen or Sp? default Fam")
 args = parser.parse_args()
 
 # create temp directory
@@ -27,6 +28,11 @@ subprocess.call(['mkdir', DBDIR])
 
 # set glmmSeq location
 glmmSeqDirectory = os.path.abspath(os.path.dirname(sys.argv[0]))
+
+# make file to hold info on highest rank to analyze to and lowest rank for RE specification
+InfoFile = str(DBDIR + '/' + 'InfoFile.txt')
+with open(InfoFile, 'w') as File:
+	File.write(args.reStructure + '\n' + args.HighestRank)
 
 # Split into test train
 sys.stderr.write('\n### ' + time.ctime(time.time()) + ': Partitioning k-fold testing/training sets ###\n')
@@ -48,7 +54,7 @@ subprocess.call(['CurateForLogReg.py', str(CTEMPDIR+'/CV.mtxa.tax'), args.InputT
 
 # R file to train on LogReg (must save ModGLMM:
 sys.stderr.write('\n### ' + time.ctime(time.time()) + ': Modelling data with binomial GLMMs ###\n\n')
-subprocess.call(['ModelWithGLMM.r', str(CTEMPDIR+'/CV.LogReg.csv'), DBDIR])
+subprocess.call(['ModelWithGLMM.r', str(CTEMPDIR+'/CV.LogReg.csv'), DBDIR, args.reStructure, args.HighestRank])
 
 # save consensus filtered fasta and tax to db directory under 'DB.fa' and 'DB.tax'
 sys.stderr.write('\n### ' + time.ctime(time.time()) + ': Writing database files and cleaning up tmp files ###\n\n')

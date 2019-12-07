@@ -22,6 +22,14 @@ subprocess.call(['mkdir', CTEMPDIR])
 # retreive db directory
 DBDIR = str(os.path.abspath(os.path.dirname(sys.argv[0]))+'/')
 
+# Set RE level and highest rank to be analyzed
+with open(str(DBDIR+args.Database+'/'+'InfoFile.txt'), 'r') as File:
+	line = File.readlines()[0].split(',')
+	print(line)
+	reLevel = line[0]
+	HighestRank = line[1]
+sys.stderr.write('\n### '+time.ctime(time.time())+': Classifying with '+HighestRank+' as highest rank and '+reLevel+' as lowest rank used for random intercept specification \n')
+
 # Run Vsearch algnmnt
 subprocess.call(['vsearch', '--usearch_global', str(args.InputFasta), '--db', str(DBDIR+args.Database+'/DB.fa'), '--id', '0.75', \
 	'--maxaccepts', '100', '--maxrejects', '50', '--maxhits', '5', '--gapopen', '0TE', '--gapext', '0TE', '--userout', str(CTEMPDIR+'/Alnmt.txt'), \
@@ -34,7 +42,7 @@ subprocess.call(['VsearchToMetaxa2.py', '-v', str(CTEMPDIR+'/Alnmt.txt'), '-t', 
 subprocess.call(['FrmtLineages.py', str(CTEMPDIR+'/tmp.tax'), str(CTEMPDIR+'/tmp2.tax')])
 
 # Run GLMM analysis and output calls and probabilities
-subprocess.call(['ClassifyGLMM.r', str(CTEMPDIR+'/tmp2.tax'), str(DBDIR+args.Database+'/'), str(args.Output)])
+subprocess.call(['subClassifyGLMM.r', str(CTEMPDIR+'/tmp2.tax'), str(DBDIR+args.Database+'/'), str(args.Output), HighestRank])
 
 # Clean up tmp
 if bool(args.SaveTemp) == False:
