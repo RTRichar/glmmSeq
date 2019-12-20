@@ -22,7 +22,7 @@ load(paste(args[2], "GenusGLMM.rda", sep=''))
 load(paste(args[2], "SpeciesGLMM.rda", sep=''))
 
 df <- read.csv(args[1], header=FALSE, na.strings=c("","NA"))
-df$V18 <- df$V10
+df$V18 <- df$V10^(1/2)
 df$V17 <- df$V11
 
 # relationship b/w training LogReg file and tax lineages for undergoing classification
@@ -63,12 +63,10 @@ NewDF$pFamily <- round((1 - predict(Fmod, df, type = "response",allow.new.levels
 
 NewDF$Genus <- df$V7
 NewDF$pGenus <- round((1 - predict(Gmod, df, type = "response",allow.new.levels=TRUE)),2)
+NewDF$pGenus <- ifelse(NewDF$pFamily > 0.95, NewDF$pGenus, NA)
 
 NewDF$Species <- df$V8
 NewDF$pSpecies <- round((1 - predict(Smod, df, type = "response",allow.new.levels=TRUE)),2)
+NewDF$pSpecies <- ifelse(NewDF$pGenus>0.95, NewDF$pSpecies, NA)
 
-write.csv(NewDF, args[3])
-
-# remove NA clauses and just go with assumption that labels are corrent
-# make --reLevel specifiable to species genus or family during training
-# make --Scope specifiable to Kingdom, Phylum or Class (default)
+write.table(NewDF, args[3], row.names = FALSE, col.names = FALSE, sep=",", quote=FALSE, )

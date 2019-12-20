@@ -26,6 +26,10 @@ if (args[4] == "Kingdom") {
 #     p, c, o, f
 #    10,11,12,13
 
+CV$V18 <- CV$V18^(1/2)
+
+print(head(CV))
+
 # running kingdom modelling
 if (args[4] == "Kingdom") {
 	cat("\n"); print('producing kingdom model'); cat("\n")
@@ -37,7 +41,7 @@ if (args[4] == "Kingdom") {
 }
 
 # running phylum modelling
-if (args[4] == "Phylum") {
+if (args[4] == "Phylum" | args[4] == "Kingdom") {
 	cat("\n"); print('producing phylum model'); cat("\n")
 	CV <- subset(CV, CV$V18 >= 10)
 	Pmod <- glmmTMB(p ~ V18 + V17 + (1|V2/V3), data = CV, family = binomial()) 
@@ -47,9 +51,9 @@ if (args[4] == "Phylum") {
 }
 
 # running class modelling
-if (args[4] == "Class") {
+if (args[4] == "Class" | args[4] == "Phylum" | args[4] == "Kingdom") {
 	cat("\n"); print('producing class model'); cat("\n")
-	CV <- subset(CV, CV$V18 >= 20)
+	CV <- subset(CV, CV$V18 >= 20^(1/2))
 	Cmod <- glmmTMB(c ~ V18 + V17 + (1|V3/V4), data = CV, family = binomial()) # nest to class
 	save(Cmod, file = paste(args[2], '/', "ClassGLMM.rda", sep=''))
 	print(summary(Cmod))
@@ -58,16 +62,16 @@ if (args[4] == "Class") {
 
 # running order modelling
 cat("\n"); print('producing order model'); cat("\n")
-CV <- subset(CV, CV$V18 >= 75)
-Omod <- glmmTMB(o ~ V18 + V17 + (1|V4/V5), data = CV, family = binomial()) # nest to order
+CV <- subset(CV, CV$V18 >= 60^(1/2))
+Omod <- glmmTMB(o ~ V18 + (1|V4/V5), data = CV, family = binomial()) # nest to order ### + V17
 save(Omod, file = paste(args[2], '/', "OrderGLMM.rda", sep=''))
 print(summary(Omod))
 print(r.squaredGLMM(Omod))
 
 # running family modelling
 cat("\n"); print('producing family model'); cat("\n")
-CV <- subset(CV, CV$V18 >= 88)
-Fmod <- glmmTMB(f ~ V18 + V17 + (1|V4/V5/V6), data = CV, family = binomial()) # nest glmm down to family
+CV <- subset(CV, CV$V18 >= 70^(1/2))
+Fmod <- glmmTMB(f ~ V18 + (1|V4/V5/V6), data = CV, family = binomial()) # nest glmm down to family
 save(Fmod, file = paste(args[2], '/', "FamilyGLMM.rda", sep=''))
 print(summary(Fmod))
 print(r.squaredGLMM(Fmod))
@@ -75,16 +79,16 @@ print(r.squaredGLMM(Fmod))
 # running Genus modelling
 if (args[3] == "Family") {
 	cat("\n"); print('producing genus model w/ family as lowest random intercept term'); cat("\n")
-	CV <- subset(CV, CV$V18 >= 92)
-	Gmod <- glmmTMB(g ~ V18 + V17 + (1|V4/V5/V6), data = CV, family = binomial()) 
+	CV <- subset(CV, CV$V18 >= 80^(1/2))
+	Gmod <- glmmTMB(g ~ V18 + (1|V4/V5/V6), data = CV, family = binomial()) 
 	save(Gmod, file = paste(args[2], '/', "GenusGLMM.rda", sep=''))
 	print(summary(Gmod))
 	print(r.squaredGLMM(Gmod))
 }
 if (args[3] == "Genus" | args[3] == "Species") {
-	cat("\n"); print('producing genus model w/ lowest genus as lowest random intercept term'); cat("\n")
-	CV <- subset(CV, CV$V18 >= 92)
-	Gmod <- glmmTMB(g ~ V18 + V17 + (1|V4/V5/V6/V7), data = CV, family = binomial())
+	cat("\n"); print('producing genus model w/ genus as lowest random intercept term'); cat("\n")
+	CV <- subset(CV, CV$V18 >= 80^(1/2))
+	Gmod <- glmmTMB(g ~ V18 + (1|V4/V5/V6/V7), data = CV, family = binomial())
 	save(Gmod, file = paste(args[2], '/', "GenusGLMM.rda", sep=''))
 	print(summary(Gmod))
 	print(r.squaredGLMM(Gmod))
@@ -93,27 +97,27 @@ if (args[3] == "Genus" | args[3] == "Species") {
 # running species modelling
 if (args[3] == "Family") {
 	cat("\n"); print('producing species model w/ family as lowest random intercept term'); cat("\n\n")
-	CV <- subset(CV, CV$V18 >= 95)
-	Smod <- glmmTMB(s ~ V18 + V17 + (1|V4/V5/V6), data = CV, family = binomial())
+	CV <- subset(CV, CV$V18 >= 85^(1/2))
+	Smod <- glmmTMB(s ~ V18 + (1|V4/V5/V6), data = CV, family = binomial())
 	save(Smod, file = paste(args[2], '/', "SpeciesGLMM.rda", sep=''))
 	print(summary(Smod))
 	print(r.squaredGLMM(Smod))
 }
 if (args[3] == "Genus") {
 	cat("\n"); print('producing species model w/ genus as lowest random intercept term'); cat("\n\n")
-	CV <- subset(CV, CV$V18 >= 95)
-	Smod <- glmmTMB(s ~ V18 + V17 + (1|V4/V5/V6/V7), data = CV, family = binomial())
+	CV <- subset(CV, CV$V18 >= 85^(1/2))
+	Smod <- glmmTMB(s ~ V18 + (1|V4/V5/V6/V7), data = CV, family = binomial())
 	save(Smod, file = paste(args[2], '/', "SpeciesGLMM.rda", sep=''))
 	print(summary(Smod))
 	print(r.squaredGLMM(Smod))
 }
 if (args[3] == "Species") {
 	cat("\n"); print('producing species model w/ species as lowest random intercept term'); cat("\n\n")
-	CV <- subset(CV, CV$V18 >= 95)
-	Smod <- glmmTMB(s ~ V18 + V17 + (1|V5/V6/V7/V8), data = CV, family = binomial())
+	CV <- subset(CV, CV$V18 >= 85^(1/2))
+	Smod <- glmmTMB(s ~ V18 + (1|V5/V6/V7/V8), data = CV, family = binomial())
 	save(Smod, file = paste(args[2], '/', "SpeciesGLMM.rda", sep=''))
 	print(summary(Smod))
 	print(r.squaredGLMM(Smod))
 }
 
-## default to genus but include options for Family or Species level random effect implementations
+## default to family but include options for genus or species level random effect implementations
