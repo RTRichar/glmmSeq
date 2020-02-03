@@ -1,4 +1,4 @@
-glmmSeq: Taxonomic sequence classification with generalized linear mixed models
+## glmmSeq: Taxonomic sequence classification with generalized linear mixed models
 
 Contact: Rodney Richardson -- rtr87 {at} yorku.ca
 
