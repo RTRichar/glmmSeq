@@ -1,14 +1,23 @@
-# glmmSeq
-The taxonomic classification of DNA sequences is an important component of most metabarcoding and metagenomic applications. Various classifiers have been put forward to satisfy this need, however, none have been shown to be both probabilistically accurate and robust to gaps in reference sequence data (i.e. the model overfitting problem). For example, the sintax classifier routinely scores among the top of the field in terms of accuracy, yet even this classifier exhibits remarkable misclassification and overclassifcation rates (). 
+glmmSeq: Taxonomic sequence classification with generalized linear mixed models
 
+Contact: Rodney Richardson -- rtr87 {at} yorku.ca
 
-Sequence classification with generalized linear mixed models
+### License
+GNU General Public License v3.0
 
-GLMM clearly applicable to issue of sequence classification
-problem of overfitting with other classifiers
+### Dependencies
 
-desirable framework with respect to limitting the potential of overfitting and explicitely modelling log odds of classification sucess
+Unix/Linux/OSX
+Python 3.6.8 
+vsearch 2.14.1
+R 3.6.1
+MuMIn R package
+glmmTMB R package
 
-CV binomial outcomes ~ predicted confidence
-test robustness to overfitting (acc ~ db size)
-compare to SINTAX
+### Purpose
+glmmSeq is designed for the classification of DNA sequences produced in metagenetic and metagenomic applications. The software can be trained to classify sequences from any genetic locus and, so far, results indicate that it is highly generalizable accross markers with variable genetic characteristics (e.g. sequences from plant ITS2, plant rbcL and arthropod COI). The current version of the code is undergoing beta testing.
+
+### Getting started
+
+TRAIN_glmmSeq.py --help
+CLASSIFY_glmmSeq.py --help
