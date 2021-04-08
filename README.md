@@ -1,6 +1,6 @@
 ### glmmSeq: Taxonomic sequence classification with generalized linear mixed models
 
-Contact: Rodney Richardson -- rtr87 {at} yorku.ca
+Contact: Rodney Richardson -- rodney.richardson {at} umces.edu
 
 ### License
 GNU General Public License v3.0
