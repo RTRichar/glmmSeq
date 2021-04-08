@@ -4,6 +4,7 @@ args = commandArgs(trailingOnly=TRUE)
 # args[1]: LogReg formated lineages, DB_directory, lowest reLevel, highest rank 
 
 # try evaluating models with performance_accurcacy() AUC analysis from Performance package
+# print some model estimates, need to look at those and think about whether we're using the most logical specification
 
 library(MuMIn)
 library(glmmTMB)
