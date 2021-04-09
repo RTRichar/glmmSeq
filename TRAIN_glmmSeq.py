@@ -38,7 +38,7 @@ with open(InfoFile, 'w') as File:
 
 # Split into test train
 sys.stderr.write('\n### ' + time.ctime(time.time()) + ': Partitioning k-fold testing/training sets ###\n')
-subprocess.call(['EXP_GetTestTrain.py', str(args.InputFasta), str(CTEMPDIR+'/'), str(args.ProportionForCV)])
+subprocess.call(['GetTestTrain.py', str(args.InputFasta), str(CTEMPDIR+'/'), str(args.ProportionForCV)])
 
 # Run Vsearch algnmnt
 sys.stderr.write('\n### ' + time.ctime(time.time()) + ': Running vsearch alignments ###\n\n')
