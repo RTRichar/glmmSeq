@@ -20,7 +20,7 @@ CTEMPDIR = str('Classify_tmp_' + '_'.join(time.ctime(time.time()).replace(':','_
 subprocess.call(['mkdir', CTEMPDIR])
 
 # retreive db directory
-DBDIR = str(os.path.abspath(os.path.dirname(sys.argv[0]))+'/')
+DBDIR = str(os.path.abspath(os.path.dirname(sys.argv[0]))+'/DBs/')
 
 # Set RE level and highest rank to be analyzed
 with open(str(DBDIR+args.Database+'/'+'InfoFile.txt'), 'r') as File:

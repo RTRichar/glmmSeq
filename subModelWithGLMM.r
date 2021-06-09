@@ -26,12 +26,13 @@ if (args[4] == "Kingdom") {
 
 #g,k, p, c, o, f,g,s,i,l
 #1,2, 3, 4, 5, 6,7,8,9,10
-#     p, c, o, f
+#     p, c, o, f, , 
 #    10,11,12,13
+# 17: alignLength, 18: alignID
 
 CV$V18 <- CV$V18^(1/2)
 
-print(head(CV))
+#print(head(CV))
 
 # running kingdom modelling
 if (args[4] == "Kingdom") {
