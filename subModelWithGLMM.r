@@ -10,6 +10,7 @@ library(glmmTMB)
 # could use function to adjust verbosity
 ModSummary <- function(x) {
 	return(paste('Conditional R-sqr: ', unname(r.squaredGLMM(x)[,2]), sep=''))
+	return(print(summary(x)))
 	# if 'verbose' == T
 		#print(summary(Kmod))
 		#print(r.squaredGLMM(Kmod)) 
@@ -18,6 +19,12 @@ ModSummary <- function(x) {
 # import data, name columns
 CV <- read.csv(args[1], header=FALSE, na.strings=c("","NA"))
 colnames(CV) <- c('GI','kReal','pReal','cReal','oReal','fReal','gReal','sReal','kPred','pPred','cPred','oPred','fPred','gPred','sPred','NA','Length','TopID','oScndID','fScndID','gScndID','sScndID','oTpHts','fTpHts','gTpHts','sTpHts')
+
+# Calculate distance between first and secong hit for each rank
+CV$oDist <- CV$TopID - CV$oScndID
+CV$fDist <- CV$TopID - CV$fScndID
+CV$gDist <- CV$TopID - CV$gScndID
+CV$sDist <- CV$TopID - CV$sScndID
 
 # Call binomial outcomes
 CV$s <- ifelse(as.character(CV$sPred)!=as.character(CV$sReal) & !is.na(CV$sPred) & !is.na(CV$sReal), 1, 0) # change V8, V15, etc to sPred, sReal, etc
@@ -32,10 +39,10 @@ if (args[4] == "Kingdom") {
 	CV$k <- ifelse(as.character(CV$kPred)!=as.character(CV$kReal) & !is.na(CV$kPred) & !is.na(CV$kReal), 1, 0) }
 
 # calculate distance between 1st and second aligned taxa
-CV$gScndID <- sqrt(CV$TopID-CV$gScndID) # could add option for un-transformed distance
+#CV$gScndID <- sqrt(CV$TopID-CV$gScndID) # could add option for un-transformed distance
 
 # Transform if specified
-#CV$TopID <- CV$TopID^(1/2)
+CV$TopID <- CV$TopID^(1/2)
 
 # write df used for glmm modeling
 write.csv(CV, file=paste(args[2], '/', 'LogReg_rDF.csv', sep=''))
@@ -66,19 +73,19 @@ save(Omod, file = paste(args[2], '/', "OrderGLMM.rda", sep='')); print(ModSummar
 # running family modelling
 cat("\n"); print('producing family model'); cat("\n")
 CV <- subset(CV, CV$TopID >= 70^(1/2))
-Fmod <- glmmTMB(f ~ TopID + fScndID + fTpHts + (1|cReal/oReal/fReal), data = CV, family = binomial()) # nest glmm down to family
-save(Fmod, file = paste(args[2], '/', "FamilyGLMM.rda", sep='')); print(ModSummary(Fmod))
+Fmod <- glmmTMB(f ~ TopID + fTpHts + fDist + (1|cReal/oReal/fReal), data = CV, family = binomial()) # nest glmm down to family
+save(Fmod, file = paste(args[2], '/', "FamilyGLMM.rda", sep='')); print(ModSummary(Fmod)); print(summary(Fmod))
 # running Genus modelling
 if (args[3] == "Family") {
 	cat("\n"); print('producing genus model w/ family as lowest random intercept term'); cat("\n")
 	CV <- subset(CV, CV$TopID >= 80^(1/2))
-	Gmod <- glmmTMB(g ~ TopID + gScndID + gTpHts + (1|cReal/oReal/fReal), data = CV, family = binomial()) 
+	Gmod <- glmmTMB(g ~ TopID + gTpHts + gDist + (1|cReal/oReal/fReal), data = CV, family = binomial()) 
 	save(Gmod, file = paste(args[2], '/', "GenusGLMM.rda", sep='')); print(ModSummary(Gmod)) }
 # running species modelling
 if (args[3] == "Family") {
 	cat("\n"); print('producing species model w/ family as lowest random intercept term'); cat("\n\n")
 	CV <- subset(CV, CV$TopID >= 85^(1/2))
-	Smod <- glmmTMB(s ~ TopID + sScndID + sTpHts + (1|cReal/oReal/fReal), data = CV, family = binomial())
+	Smod <- glmmTMB(s ~ TopID + sTpHts + sDist + (1|cReal/oReal/fReal), data = CV, family = binomial())
 	save(Smod, file = paste(args[2], '/', "SpeciesGLMM.rda", sep='')); print(ModSummary(Smod)) }
 
 ## default to family but include options for accelerated genus or species level random effect implementations
