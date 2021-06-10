@@ -20,7 +20,7 @@ CTEMPDIR = str('Classify_tmp_' + '_'.join(time.ctime(time.time()).replace(':','_
 subprocess.call(['mkdir', CTEMPDIR])
 
 # retreive db directory
-DBDIR = str(os.path.abspath(os.path.dirname(sys.argv[0]))+'/DBs/')
+DBDIR = str(os.path.abspath(os.path.dirname(sys.argv[0]))+'/Databases/')
 
 # Set RE level and highest rank to be analyzed
 with open(str(DBDIR+args.Database+'/'+'InfoFile.txt'), 'r') as File:
@@ -34,14 +34,18 @@ sys.stderr.write('\n### '+time.ctime(time.time())+': Classifying with '+HighestR
 subprocess.call(['vsearch', '--usearch_global', str(args.InputFasta), '--db', str(DBDIR+args.Database+'/DB.fa'), '--id', '0.6', \
 	'--maxaccepts', '100', '--maxrejects', '50', '--maxhits', '1', '--gapopen', '0TE', '--gapext', '0TE', '--userout', str(CTEMPDIR+'/Alnmt.txt'), \
 	'--userfields', 'query+target+id+alnlen+mism+opens+qlo+qhi+tlo+thi+evalue+bits+qcov', '--query_cov', '0.95', '--threads', str(args.Threads)])
+subprocess.call(['vsearch', '--usearch_global', str(args.InputFasta), '--db', str(DBDIR+args.Database+'/DB.fa'), '--id', '0.6', \
+        '--maxaccepts', '100', '--maxrejects', '50', '--maxhits', '50', '--gapopen', '0TE', '--gapext', '0TE', '--userout', str(CTEMPDIR+'/Alnmt_2nd.txt'), \
+        '--userfields', 'query+target+id+alnlen+mism+opens+qlo+qhi+tlo+thi+evalue+bits+qcov', '--query_cov', '0.95', '--threads', str(args.Threads)])
 
 # Get Mtxa2 formatted output
 subprocess.call(['VsearchToMetaxa2.py', '-v', str(CTEMPDIR+'/Alnmt.txt'), '-t', str(DBDIR+args.Database+'/DB.tax'), '-o', str(CTEMPDIR+'/tmp.tax')])
 
-# reformat lineages
-subprocess.call(['FrmtLineages.py', str(CTEMPDIR+'/tmp.tax'), str(CTEMPDIR+'/tmp2.tax')])
+# reformat lineages  # not used in training
+subprocess.call(['Get2ndHitTaxID.py', str(DBDIR+args.Database+'/DB.tax'), str(CTEMPDIR+'/Alnmt_2nd.txt'), str(CTEMPDIR+'/Alnmt_2nd.csv')])
+subprocess.call(['FrmtLineages.py', str(CTEMPDIR+'/tmp.tax'), str(CTEMPDIR+'/Alnmt_2nd.csv'), str(CTEMPDIR+'/tmp2.tax')]) 
 
-# Run GLMM analysis and output calls and probabilities
+# Run GLMM analysis and output calls and probabilities    # replace str(CTEMPDIR+'/tmp2.tax') with str(CTEMPDIR+'/tmp3.tax')
 subprocess.call(['subClassifyGLMM.r', str(CTEMPDIR+'/tmp2.tax'), str(DBDIR+args.Database+'/'), str(args.Output), HighestRank])
 
 # Clean up tmp

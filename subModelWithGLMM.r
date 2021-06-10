@@ -3,125 +3,82 @@ args = commandArgs(trailingOnly=TRUE)
 
 # args[1]: LogReg formated lineages, DB_directory, lowest reLevel, highest rank 
 
-# try evaluating models with performance_accurcacy() AUC analysis from Performance package
-# print some model estimates, need to look at those and think about whether we're using the most logical specification
-
+# load libraries and set some functions
 library(MuMIn)
 library(glmmTMB)
 
+# could use function to adjust verbosity
+ModSummary <- function(x) {
+	return(paste('Conditional R-sqr: ', unname(r.squaredGLMM(x)[,2]), sep=''))
+	# if 'verbose' == T
+		#print(summary(Kmod))
+		#print(r.squaredGLMM(Kmod)) 
+}
+
+# import data, name columns
 CV <- read.csv(args[1], header=FALSE, na.strings=c("","NA"))
-CV$s <- ifelse(as.character(CV$V8)!=as.character(CV$V15) & !is.na(CV$V8) & !is.na(CV$V15), 1, 0)
-CV$g <- ifelse(as.character(CV$V7)!=as.character(CV$V14) & !is.na(CV$V7) & !is.na(CV$V14), 1, 0)
-CV$f <- ifelse(as.character(CV$V6)!=as.character(CV$V13) & !is.na(CV$V6) & !is.na(CV$V13), 1, 0)
-CV$o <- ifelse(as.character(CV$V5)!=as.character(CV$V12) & !is.na(CV$V5) & !is.na(CV$V12), 1, 0)
+colnames(CV) <- c('GI','kReal','pReal','cReal','oReal','fReal','gReal','sReal','kPred','pPred','cPred','oPred','fPred','gPred','sPred','NA','Length','TopID','oScndID','fScndID','gScndID','sScndID','oTpHts','fTpHts','gTpHts','sTpHts')
+
+# Call binomial outcomes
+CV$s <- ifelse(as.character(CV$sPred)!=as.character(CV$sReal) & !is.na(CV$sPred) & !is.na(CV$sReal), 1, 0) # change V8, V15, etc to sPred, sReal, etc
+CV$g <- ifelse(as.character(CV$gPred)!=as.character(CV$gReal) & !is.na(CV$gPred) & !is.na(CV$gReal), 1, 0)
+CV$f <- ifelse(as.character(CV$fPred)!=as.character(CV$fReal) & !is.na(CV$fPred) & !is.na(CV$fReal), 1, 0)
+CV$o <- ifelse(as.character(CV$oPred)!=as.character(CV$oReal) & !is.na(CV$oPred) & !is.na(CV$oReal), 1, 0)
 if (args[4] == "Class") {
-	CV$c <- ifelse(as.character(CV$V4)!=as.character(CV$V11) & !is.na(CV$V4) & !is.na(CV$V11), 1, 0)
-}
+	CV$c <- ifelse(as.character(CV$cPred)!=as.character(CV$cReal) & !is.na(CV$cPred) & !is.na(CV$cReal), 1, 0) }
 if (args[4] == "Phylum") {
-	CV$p <- ifelse(as.character(CV$V3)!=as.character(CV$V10) & !is.na(CV$V3) & !is.na(CV$V10), 1, 0)
-}
+	CV$p <- ifelse(as.character(CV$pPred)!=as.character(CV$pReal) & !is.na(CV$pPred) & !is.na(CV$pReal), 1, 0) }
 if (args[4] == "Kingdom") {
-	CV$k <- ifelse(as.character(CV$V2)!=as.character(CV$V9) & !is.na(CV$V2) & !is.na(CV$V9), 1, 0)
-}
+	CV$k <- ifelse(as.character(CV$kPred)!=as.character(CV$kReal) & !is.na(CV$kPred) & !is.na(CV$kReal), 1, 0) }
 
-#g,k, p, c, o, f,g,s,i,l
-#1,2, 3, 4, 5, 6,7,8,9,10
-#     p, c, o, f, , 
-#    10,11,12,13
-# 17: alignLength, 18: alignID
+# calculate distance between 1st and second aligned taxa
+CV$gScndID <- sqrt(CV$TopID-CV$gScndID) # could add option for un-transformed distance
 
-CV$V18 <- CV$V18^(1/2)
+# Transform if specified
+#CV$TopID <- CV$TopID^(1/2)
 
-#print(head(CV))
+# write df used for glmm modeling
+write.csv(CV, file=paste(args[2], '/', 'LogReg_rDF.csv', sep=''))
 
 # running kingdom modelling
 if (args[4] == "Kingdom") {
 	cat("\n"); print('producing kingdom model'); cat("\n")
-	CV <- subset(CV, CV$V18 >= 10)
-	Kmod <- glmmTMB(k ~ V18 + V17 + (1|V2), data = CV, family = binomial()) 
-	save(Kmod, file = paste(args[2], '/', "KingdomGLMM.rda", sep=''))
-	print(summary(Kmod))
-	print(r.squaredGLMM(Kmod))
-}
-
+	CV <- subset(CV, CV$TopID >= 10)
+	Kmod <- glmmTMB(k ~ TopID + (1|kReal), data = CV, family = binomial()) 
+	save(Kmod, file = paste(args[2], '/', "KingdomGLMM.rda", sep='')); print(ModSummary(Kmod)) }
 # running phylum modelling
 if (args[4] == "Phylum" | args[4] == "Kingdom") {
 	cat("\n"); print('producing phylum model'); cat("\n")
-	CV <- subset(CV, CV$V18 >= 10)
-	Pmod <- glmmTMB(p ~ V18 + V17 + (1|V2/V3), data = CV, family = binomial()) 
-	save(Pmod, file = paste(args[2], '/', "PhylumGLMM.rda", sep=''))
-	print(summary(Pmod))
-	print(r.squaredGLMM(Pmod))
-}
-
+	CV <- subset(CV, CV$TopID >= 10)
+	Pmod <- glmmTMB(p ~ TopID + (1|kReal/pReal), data = CV, family = binomial()) 
+	save(Pmod, file = paste(args[2], '/', "PhylumGLMM.rda", sep='')); print(ModSummary(Pmod)) }
 # running class modelling
-if (args[4] == "Class" | args[4] == "Phylum" | args[4] == "Kingdom") {
+if (args[4] == "Class" | args[4] == "Phylum" | args[4] == "Kingdom"){
 	cat("\n"); print('producing class model'); cat("\n")
-	CV <- subset(CV, CV$V18 >= 20^(1/2))
-	Cmod <- glmmTMB(c ~ V18 + V17 + (1|V3/V4), data = CV, family = binomial()) # nest to class
-	save(Cmod, file = paste(args[2], '/', "ClassGLMM.rda", sep=''))
-	print(summary(Cmod))
-	print(r.squaredGLMM(Cmod))
-}
-
+	CV <- subset(CV, CV$TopID >= 20^(1/2))
+	Cmod <- glmmTMB(c ~ TopID + (1|pReal/cReal), data = CV, family = binomial()) # nest to class
+	save(Cmod, file = paste(args[2], '/', "ClassGLMM.rda", sep='')); print(ModSummary(Cmod)) }
 # running order modelling
 cat("\n"); print('producing order model'); cat("\n")
-CV <- subset(CV, CV$V18 >= 60^(1/2))
-Omod <- glmmTMB(o ~ V18 + (1|V4/V5), data = CV, family = binomial()) # nest to order ### + V17
-save(Omod, file = paste(args[2], '/', "OrderGLMM.rda", sep=''))
-print(summary(Omod))
-print(r.squaredGLMM(Omod))
-
+CV <- subset(CV, CV$TopID >= 60^(1/2))
+Omod <- glmmTMB(o ~ TopID + oScndID + oTpHts + (1|cReal/oReal), data = CV, family = binomial()) # nest to order ### + V17
+save(Omod, file = paste(args[2], '/', "OrderGLMM.rda", sep='')); print(ModSummary(Omod))
 # running family modelling
 cat("\n"); print('producing family model'); cat("\n")
-CV <- subset(CV, CV$V18 >= 70^(1/2))
-Fmod <- glmmTMB(f ~ V18 + (1|V4/V5/V6), data = CV, family = binomial()) # nest glmm down to family
-save(Fmod, file = paste(args[2], '/', "FamilyGLMM.rda", sep=''))
-print(summary(Fmod))
-print(r.squaredGLMM(Fmod))
-
+CV <- subset(CV, CV$TopID >= 70^(1/2))
+Fmod <- glmmTMB(f ~ TopID + fScndID + fTpHts + (1|cReal/oReal/fReal), data = CV, family = binomial()) # nest glmm down to family
+save(Fmod, file = paste(args[2], '/', "FamilyGLMM.rda", sep='')); print(ModSummary(Fmod))
 # running Genus modelling
 if (args[3] == "Family") {
 	cat("\n"); print('producing genus model w/ family as lowest random intercept term'); cat("\n")
-	CV <- subset(CV, CV$V18 >= 80^(1/2))
-	Gmod <- glmmTMB(g ~ V18 + (1|V4/V5/V6), data = CV, family = binomial()) 
-	save(Gmod, file = paste(args[2], '/', "GenusGLMM.rda", sep=''))
-	print(summary(Gmod))
-	print(r.squaredGLMM(Gmod))
-}
-if (args[3] == "Genus" | args[3] == "Species") {
-	cat("\n"); print('producing genus model w/ genus as lowest random intercept term'); cat("\n")
-	CV <- subset(CV, CV$V18 >= 80^(1/2))
-	Gmod <- glmmTMB(g ~ V18 + (1|V4/V5/V6/V7), data = CV, family = binomial())
-	save(Gmod, file = paste(args[2], '/', "GenusGLMM.rda", sep=''))
-	print(summary(Gmod))
-	print(r.squaredGLMM(Gmod))
-}
-
+	CV <- subset(CV, CV$TopID >= 80^(1/2))
+	Gmod <- glmmTMB(g ~ TopID + gScndID + gTpHts + (1|cReal/oReal/fReal), data = CV, family = binomial()) 
+	save(Gmod, file = paste(args[2], '/', "GenusGLMM.rda", sep='')); print(ModSummary(Gmod)) }
 # running species modelling
 if (args[3] == "Family") {
 	cat("\n"); print('producing species model w/ family as lowest random intercept term'); cat("\n\n")
-	CV <- subset(CV, CV$V18 >= 85^(1/2))
-	Smod <- glmmTMB(s ~ V18 + (1|V4/V5/V6), data = CV, family = binomial())
-	save(Smod, file = paste(args[2], '/', "SpeciesGLMM.rda", sep=''))
-	print(summary(Smod))
-	print(r.squaredGLMM(Smod))
-}
-if (args[3] == "Genus") {
-	cat("\n"); print('producing species model w/ genus as lowest random intercept term'); cat("\n\n")
-	CV <- subset(CV, CV$V18 >= 85^(1/2))
-	Smod <- glmmTMB(s ~ V18 + (1|V4/V5/V6/V7), data = CV, family = binomial())
-	save(Smod, file = paste(args[2], '/', "SpeciesGLMM.rda", sep=''))
-	print(summary(Smod))
-	print(r.squaredGLMM(Smod))
-}
-if (args[3] == "Species") {
-	cat("\n"); print('producing species model w/ species as lowest random intercept term'); cat("\n\n")
-	CV <- subset(CV, CV$V18 >= 85^(1/2))
-	Smod <- glmmTMB(s ~ V18 + (1|V5/V6/V7/V8), data = CV, family = binomial())
-	save(Smod, file = paste(args[2], '/', "SpeciesGLMM.rda", sep=''))
-	print(summary(Smod))
-	print(r.squaredGLMM(Smod))
-}
+	CV <- subset(CV, CV$TopID >= 85^(1/2))
+	Smod <- glmmTMB(s ~ TopID + sScndID + sTpHts + (1|cReal/oReal/fReal), data = CV, family = binomial())
+	save(Smod, file = paste(args[2], '/', "SpeciesGLMM.rda", sep='')); print(ModSummary(Smod)) }
 
-## default to family but include options for genus or species level random effect implementations
+## default to family but include options for accelerated genus or species level random effect implementations
