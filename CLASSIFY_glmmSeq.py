@@ -42,7 +42,7 @@ subprocess.call(['vsearch', '--usearch_global', str(args.InputFasta), '--db', st
 subprocess.call(['VsearchToMetaxa2.py', '-v', str(CTEMPDIR+'/Alnmt.txt'), '-t', str(DBDIR+args.Database+'/DB.tax'), '-o', str(CTEMPDIR+'/tmp.tax')])
 
 # reformat lineages  # not used in training
-subprocess.call(['Get2ndHitTaxID.py', str(DBDIR+args.Database+'/DB.tax'), str(CTEMPDIR+'/Alnmt_2nd.txt'), str(CTEMPDIR+'/Alnmt_2nd.csv')])
+subprocess.call(['Get2ndHitTaxID_CLASSIFY.py', str(DBDIR+args.Database+'/DB.tax'), str(CTEMPDIR+'/Alnmt_2nd.txt'), str(CTEMPDIR+'/Alnmt_2nd.csv')])
 subprocess.call(['FrmtLineages.py', str(CTEMPDIR+'/tmp.tax'), str(CTEMPDIR+'/Alnmt_2nd.csv'), str(CTEMPDIR+'/tmp2.tax')]) 
 
 # Run GLMM analysis and output calls and probabilities    # replace str(CTEMPDIR+'/tmp2.tax') with str(CTEMPDIR+'/tmp3.tax')

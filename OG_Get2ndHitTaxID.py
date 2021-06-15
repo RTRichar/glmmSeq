@@ -22,8 +22,8 @@ with open(sys.argv[1], 'r') as TaxFile:
 # run through 2nd tax alignment file once for each taxonomic rank, record second tax percent ID
 
 # get initial values from line 0
-ScndTaxIDs = {} # ScndTaxIDs[Q] = [Ord2ndID,Fam2ndID,Gen2ndID,Sp2ndID]
-FrstTaxQs = {} # number of hits to first tax
+ScndTaxIDs = {} # ScndTaxIDs[tax] = [Ord2ndID,Fam2ndID,Gen2ndID,Sp2ndID]
+FrstTaxQs = {}
 with open(sys.argv[2], 'r') as VsearchOut:	
 	L = VsearchOut.readlines()[0].split('\t')[0:2]
 	Q = L[0]

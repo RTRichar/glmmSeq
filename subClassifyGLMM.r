@@ -21,8 +21,24 @@ load(paste(args[2], "SpeciesGLMM.rda", sep=''))
 df <- read.csv(args[1], header=FALSE, na.strings=c("","NA"))
 colnames(df) <- c('GI','kReal','pReal','cReal','oReal','fReal','gReal','sReal','na','TopID','Length','oScndID','fScndID','gScndID','sScndID','oTpHts','fTpHts','gTpHts','sTpHts')
 
-#df$V18 <- df$V10 #^(1/2)
-#df$V17 <- df$V11
+# Transform TopID if specified
+df$TopID <- df$TopID^(1/2)
+
+# mark hits with only one hit to the top taxon
+df$sTpHts <- ifelse(df$sTpHts>1&df$sTpHts<4,2,df$sTpHts); df$sTpHts <- ifelse(df$sTpHts>3,3,df$sTpHts); df$sTpHts <- as.factor(df$sTpHts)
+df$gTpHts <- ifelse(df$gTpHts>1&df$gTpHts<4,2,df$gTpHts); df$gTpHts <- ifelse(df$gTpHts>3,3,df$gTpHts); df$gTpHts <- as.factor(df$gTpHts)
+df$fTpHts <- ifelse(df$fTpHts>1&df$fTpHts<4,2,df$fTpHts); df$fTpHts <- ifelse(df$fTpHts>3,3,df$fTpHts); df$fTpHts <- as.factor(df$fTpHts)
+df$oTpHts <- ifelse(df$oTpHts>1&df$oTpHts<4,2,df$oTpHts); df$oTpHts <- ifelse(df$oTpHts>3,3,df$oTpHts); df$oTpHts <- as.factor(df$oTpHts)
+
+# if second hit option is RandomEffect, bin ScndID distances
+df$sDist <- (df$TopID - df$sScndID)
+df$gDist <- (df$TopID - df$gScndID)
+df$fDist <- (df$TopID - df$fScndID)
+df$oDist <- (df$TopID - df$oScndID)
+df$sDist <- ifelse(df$sDist<1,1,df$sDist); df$sDist <- ifelse(df$sDist>1,2,df$sDist); df$sDist <- as.factor(df$sDist)
+df$gDist <- ifelse(df$gDist<1,1,df$gDist); df$gDist <- ifelse(df$gDist>1,2,df$gDist); df$gDist <- as.factor(df$gDist)
+df$fDist <- ifelse(df$fDist<1,1,df$fDist); df$fDist <- ifelse(df$fDist>1,2,df$fDist); df$fDist <- as.factor(df$fDist)
+df$oDist <- ifelse(df$oDist<1,1,df$oDist); df$oDist <- ifelse(df$oDist>1,2,df$oDist); df$oDist <- as.factor(df$oDist)
 
 # make new dataframe to hold results
 NewDF <- as.data.frame(df[,1]); colnames(NewDF) <- c('Accession')

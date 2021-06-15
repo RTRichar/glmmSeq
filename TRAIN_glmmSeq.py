@@ -59,7 +59,7 @@ subprocess.call(['VsearchToMetaxa2.py', '-v', str(CTEMPDIR+'/CV.vsrch.txt'), '-t
 
 ##############
 subprocess.call(['CombineCVs.py', str(CTEMPDIR), Parts, 'CV_2nd.vsrch.txt'])
-subprocess.call(['Get2ndHitTaxID.py', args.InputTax, str(CTEMPDIR+'/CV_2nd.vsrch.txt'), str(CTEMPDIR+'/CV_2nd.vsrch.csv')])
+subprocess.call(['Get2ndHitTaxID_TRAIN.py', args.InputTax, str(CTEMPDIR+'/CV_2nd.vsrch.txt'), str(CTEMPDIR+'/CV_2nd.vsrch.csv')])
 ##############
 
 subprocess.call(['CurateForLogReg.py', str(CTEMPDIR+'/CV.mtxa.tax'), args.InputTax, str(CTEMPDIR+'/CV_2nd.vsrch.csv'), str(CTEMPDIR+'/CV.LogReg.csv')])

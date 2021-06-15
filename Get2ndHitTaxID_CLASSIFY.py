@@ -36,18 +36,17 @@ for i in [3,4,5,6]:
 		for line in VsearchOut:
 			if line.split('\t')[0] == Q: # if Q same			
 				if ScndIDstat == 'notfound': # and Second ID not found
-					if TaxDct[line.split('\t')[0]][i] != '': # Q taxa not blank    #### But Q Taxa not known during classification!!!!
-						if TaxDct[line.split('\t')[1]][i] != '': # T not blank
-							Ql += 1
-							if TaxDct[line.split('\t')[1]][i] != TaxDct[T][i]: # and T changed
-								ScndID = line.split('\t')[2]
-								ScndIDstat = 'found'
-								if i == 3:
-									ScndTaxIDs[Q] = [str(ScndID)]
-									FrstTaxQs[Q] = [str(Ql)]
-								else:
-									ScndTaxIDs[Q].append(str(ScndID))
-									FrstTaxQs[Q].append(str(Ql))
+					if TaxDct[line.split('\t')[1]][i] != '': # T not blank
+						Ql += 1
+						if TaxDct[line.split('\t')[1]][i] != TaxDct[T][i]: # and T changed
+							ScndID = line.split('\t')[2]
+							ScndIDstat = 'found'
+							if i == 3:
+								ScndTaxIDs[Q] = [str(ScndID)]
+								FrstTaxQs[Q] = [str(Ql)]
+							else:
+								ScndTaxIDs[Q].append(str(ScndID))
+								FrstTaxQs[Q].append(str(Ql))
 			else: # if Q changed
 				if ScndIDstat == 'notfound':
 					if i == 3:
