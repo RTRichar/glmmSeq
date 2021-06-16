@@ -64,12 +64,28 @@ NewDF$pOrder <- round((1 - predict(Omod, df, type = "response",allow.new.levels=
 NewDF$Family <- df$fReal
 NewDF$pFamily <- round((1 - predict(Fmod, df, type = "response",allow.new.levels=TRUE)),2)
 
-NewDF$Genus <- df$gReal
-NewDF$pGenus <- round((1 - predict(Gmod, df, type = "response",allow.new.levels=TRUE)),2)
-NewDF$pGenus <- ifelse(NewDF$pFamily > 0.95, NewDF$pGenus, NA)
+# if -re == Family
+if (args[5] == "Family") {
+	NewDF$Genus <- df$gReal
+	NewDF$pGenus <- round((1 - predict(Gmod, df, type = "response",allow.new.levels=TRUE)),2)
+	NewDF$pGenus <- ifelse(NewDF$pFamily > 0.95, NewDF$pGenus, NA)
+	NewDF$Species <- df$sReal
+	NewDF$pSpecies <- round((1 - predict(Smod, df, type = "response",allow.new.levels=TRUE)),2)
+	NewDF$pSpecies <- ifelse(NewDF$pGenus>0.95, NewDF$pSpecies, NA)}
 
-NewDF$Species <- df$sReal
-NewDF$pSpecies <- round((1 - predict(Smod, df, type = "response",allow.new.levels=TRUE)),2)
-NewDF$pSpecies <- ifelse(NewDF$pGenus>0.95, NewDF$pSpecies, NA)
+# if -re == SpeedGenus
+if (args[5] == "SpeedGenus") {
+	# import genus list
+	read.csv()
+	# split Q based on occurence in genus list
+	# run Qs outside genus list
+	# run Qs within genus list
+	# recombine
+        NewDF$Genus <- df$gReal
+        NewDF$pGenus <- round((1 - predict(Gmod, df, type = "response",allow.new.levels=TRUE)),2)
+        NewDF$pGenus <- ifelse(NewDF$pFamily > 0.95, NewDF$pGenus, NA)
+        NewDF$Species <- df$sReal
+        NewDF$pSpecies <- round((1 - predict(Smod, df, type = "response",allow.new.levels=TRUE)),2)
+        NewDF$pSpecies <- ifelse(NewDF$pGenus>0.95, NewDF$pSpecies, NA)}
 
 write.table(NewDF, args[3], row.names = FALSE, col.names = FALSE, sep=",", quote=FALSE, )

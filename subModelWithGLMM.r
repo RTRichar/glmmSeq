@@ -80,21 +80,45 @@ save(Omod, file = paste(args[2], '/', "OrderGLMM.rda", sep='')); print(ModSummar
 cat("\n"); print('producing family model'); cat("\n")
 CV <- subset(CV, CV$TopID >= 70^(1/2))
 Fmod <- glmmTMB(f ~ TopID + (1|fTpHts) + (1|fDist) + (1|cReal/oReal/fReal), data = CV, family = binomial()) # nest glmm down to family
-CV$Pred <- predict(Fmod,type=c("response")); roccurve<-roc(CV$f~CV$Pred); print(auc(roccurve))
 save(Fmod, file = paste(args[2], '/', "FamilyGLMM.rda", sep='')); print(ModSummary(Fmod))#; print(summary(Fmod))
 # running Genus modelling
 if (args[3] == "Family") {
 	cat("\n"); print('producing genus model w/ family as lowest random intercept term'); cat("\n")
 	CV <- subset(CV, CV$TopID >= 80^(1/2))
 	Gmod <- glmmTMB(g ~ TopID + (1|gTpHts) + (1|gDist) + (1|cReal/oReal/fReal), data = CV, family = binomial()) 
-	CV$Pred <- predict(Gmod,type=c("response")); roccurve<-roc(CV$g~CV$Pred); print(auc(roccurve))
-	save(Gmod, file = paste(args[2], '/', "GenusGLMM.rda", sep='')); print(ModSummary(Gmod)) 
-}
+	#CV$Pred <- predict(Gmod,type=c("response")); roccurve<-roc(CV$g~CV$Pred); print(auc(roccurve))
+	save(Gmod, file = paste(args[2], '/', "GenusGLMM.rda", sep='')); print(ModSummary(Gmod)) }
 # running species modelling
 if (args[3] == "Family") {
 	cat("\n"); print('producing species model w/ family as lowest random intercept term'); cat("\n\n")
 	CV <- subset(CV, CV$TopID >= 85^(1/2))
 	Smod <- glmmTMB(s ~ TopID + (1|sTpHts) + (1|sDist) + (1|cReal/oReal/fReal), data = CV, family = binomial())
 	save(Smod, file = paste(args[2], '/', "SpeciesGLMM.rda", sep='')); print(ModSummary(Smod)) }
+# default to family but include options for accelerated genus level random effect implementation
+if (args[3] == "SpeedGenus") {
+        cat("\n"); print('producing genus models w/ speed genus option'); cat("\n")
+        CV <- subset(CV, CV$TopID >= 80^(1/2))
+        Gmod <- glmmTMB(g ~ TopID + (1|gTpHts) + (1|gDist) + (1|cReal/oReal/fReal), data = CV, family = binomial())
+        save(Gmod, file = paste(args[2], '/', "GenusGLMM.rda", sep='')); print(ModSummary(Gmod))
+	Genera <- unique(levels(CV$gReal))
+	GenusDF <- as.data.frame(matrix(nrow=0,ncol=ncol(CV)))
+	colnames(GenusDF) <- colnames(CV)
+	print(head(GenusDF))
+	for (i in Genera) {
+		tmpDF <- CV[CV$gReal==i,]
+		NumSpp <- length(unique(levels(droplevels(tmpDF$sReal))))
+		if (NumSpp >= 5) { GenusDF <- rbind(GenusDF,tmpDF) } }
+	Gmod <- glmmTMB(g ~ TopID + (1|gTpHts) + (1|gDist) + (1|oReal/fReal/gReal), data = GenusDF, family = binomial())
+	save(Gmod, file = paste(args[2], '/', "srGenusGLMM.rda", sep='')); print(ModSummary(Gmod))
+	cat("\n"); print('producing species models w/ speed genus option'); cat("\n")
+	CV <- subset(CV, CV$TopID >= 90^(1/2))
+	GenusDF <- subset(GenusDF, GenusDF$TopID >= 90^(1/2))
+	Smod <- glmmTMB(s ~ TopID + (1|sTpHts) + (1|sDist) + (1|cReal/oReal/fReal), data = CV, family = binomial())
+	save(Smod, file = paste(args[2], '/', "SpeciesGLMM.rda", sep='')); print(ModSummary(Smod))
+	Smod <- glmmTMB(s ~ TopID + (1|sTpHts) + (1|sDist) + (1|oReal/fReal/gReal), data = GenusDF, family = binomial())
+	save(Smod, file = paste(args[2], '/', "srSpeciesGLMM.rda", sep='')); print(ModSummary(Smod))}
+# write species rich genera to file
+srG <- unique(levels(droplevels(GenusDF$gReal)))
+write.csv(srG, file = paste(args[2], "/srGenera.csv", sep=''))
 
-## default to family but include options for accelerated genus or species level random effect implementations
+
