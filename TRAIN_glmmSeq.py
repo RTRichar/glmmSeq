@@ -18,6 +18,9 @@ optional.add_argument('-hr', '--HighestRank', required = False, type=str, defaul
 optional.add_argument('-re', '--reStructure', required = False, type=str, default = 'Family', help = "\n reLevels to Fam, Gen or Sp? default Fam")
 args = parser.parse_args()
 
+# Test if SaveTemp 'True' 'False,' not T/F or TRUE/FALSE
+# Test if -re Family/SpeedGenus
+
 # create temp directory
 CTEMPDIR = str('TRAIN_tmp_' + '_'.join(time.ctime(time.time()).replace(':','_').split()[1:]))
 subprocess.call(['mkdir', CTEMPDIR])

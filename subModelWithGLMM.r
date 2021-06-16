@@ -97,7 +97,7 @@ if (args[3] == "Family") {
 # default to family but include options for accelerated genus level random effect implementation
 if (args[3] == "SpeedGenus") {
         cat("\n"); print('producing genus models w/ speed genus option'); cat("\n")
-        CV <- subset(CV, CV$TopID >= 80^(1/2))
+        CV <- subset(CV, CV$TopID >= 90^(1/2))
         Gmod <- glmmTMB(g ~ TopID + (1|gTpHts) + (1|gDist) + (1|cReal/oReal/fReal), data = CV, family = binomial())
         save(Gmod, file = paste(args[2], '/', "GenusGLMM.rda", sep='')); print(ModSummary(Gmod))
 	Genera <- unique(levels(CV$gReal))
@@ -107,16 +107,18 @@ if (args[3] == "SpeedGenus") {
 	for (i in Genera) {
 		tmpDF <- CV[CV$gReal==i,]
 		NumSpp <- length(unique(levels(droplevels(tmpDF$sReal))))
-		if (NumSpp >= 5) { GenusDF <- rbind(GenusDF,tmpDF) } }
-	Gmod <- glmmTMB(g ~ TopID + (1|gTpHts) + (1|gDist) + (1|oReal/fReal/gReal), data = GenusDF, family = binomial())
-	save(Gmod, file = paste(args[2], '/', "srGenusGLMM.rda", sep='')); print(ModSummary(Gmod))
+		NumCases <- nrow(tmpDF)
+		if (NumSpp >= 5 & NumCases >= 15) { GenusDF <- rbind(GenusDF,tmpDF) } } # GenusDF is df used to model species rich genera
+	cat("\n"); print(paste('Number of time-consuming, species rich genera: ',length(unique(levels(droplevels(GenusDF$gReal)))),sep='')); cat("\n")
+	srGmod <- glmmTMB(g ~ TopID + (1|gTpHts) + (1|gDist) + (1|oReal/fReal/gReal), data = GenusDF, family = binomial())
+	save(srGmod, file = paste(args[2], '/', "srGenusGLMM.rda", sep='')); print(ModSummary(srGmod))
 	cat("\n"); print('producing species models w/ speed genus option'); cat("\n")
-	CV <- subset(CV, CV$TopID >= 90^(1/2))
-	GenusDF <- subset(GenusDF, GenusDF$TopID >= 90^(1/2))
+	CV <- subset(CV, CV$TopID >= 95^(1/2))
+	GenusDF <- subset(GenusDF, GenusDF$TopID >= 95^(1/2))
 	Smod <- glmmTMB(s ~ TopID + (1|sTpHts) + (1|sDist) + (1|cReal/oReal/fReal), data = CV, family = binomial())
 	save(Smod, file = paste(args[2], '/', "SpeciesGLMM.rda", sep='')); print(ModSummary(Smod))
-	Smod <- glmmTMB(s ~ TopID + (1|sTpHts) + (1|sDist) + (1|oReal/fReal/gReal), data = GenusDF, family = binomial())
-	save(Smod, file = paste(args[2], '/', "srSpeciesGLMM.rda", sep='')); print(ModSummary(Smod))}
+	srSmod <- glmmTMB(s ~ TopID + (1|sTpHts) + (1|sDist) + (1|oReal/fReal/gReal), data = GenusDF, family = binomial())
+	save(srSmod, file = paste(args[2], '/', "srSpeciesGLMM.rda", sep='')); print(ModSummary(srSmod))}
 # write species rich genera to file
 srG <- unique(levels(droplevels(GenusDF$gReal)))
 write.csv(srG, file = paste(args[2], "/srGenera.csv", sep=''))
