@@ -9,6 +9,9 @@ import time
 
 sys.stderr.write('\n\n### ' + time.ctime(time.time()) + '\n\n')
 
+def diff(list1, list2):
+	return list(set(list1).symmetric_difference(set(list2)))
+
 # populate dictionary with fasta
 #fasta = defaultdict(list)
 #with open(sys.argv[1]) as file_one:
