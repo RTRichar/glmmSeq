@@ -28,6 +28,8 @@ with open(str(DBDIR+args.Database+'/'+'InfoFile.txt'), 'r') as File:
 	print(line)
 	reLevel = line[0] # reLevel does specify SpeedGenus
 	HighestRank = line[1]
+	#feStruct
+	#cutoffs
 sys.stderr.write('\n### '+time.ctime(time.time())+': Classifying with '+HighestRank+' as highest rank and '+reLevel+' as lowest rank used for random intercept specification \n')
 
 # Run Vsearch algnmnt

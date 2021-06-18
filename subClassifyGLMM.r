@@ -21,7 +21,7 @@ load(paste(args[2], "SpeciesGLMM.rda", sep=''))
 load(paste(args[2], "srSpeciesGLMM.rda", sep=''))
 
 df <- read.csv(args[1], header=FALSE, na.strings=c("","NA"))
-colnames(df) <- c('GI','kReal','pReal','cReal','oReal','fReal','gReal','sReal','na','TopID','Length','oScndID','fScndID','gScndID','sScndID','oTpHts','fTpHts','gTpHts','sTpHts')
+colnames(df) <- c('GI','kPred','pPred','cPred','oPred','fPred','gPred','sPred','na','TopID','Length','oScndID','fScndID','gScndID','sScndID','oTpHts','fTpHts','gTpHts','sTpHts')
 
 # Transform TopID if specified
 df$TopID <- df$TopID^(1/2)
@@ -78,8 +78,10 @@ df$oDist <- ifelse(df$oDist<1,1,df$oDist); df$oDist <- ifelse(df$oDist>1,2,df$oD
 # if -re == SpeedGenus
 if (args[5] == "SpeedGenus") { cat("\n"); print('Loading data'); cat("\n")
 	srG <- read.csv(file = paste(args[2], "/srGenera.csv", sep=''), header = TRUE)
-	DF <- df[!(df$gReal%in%srG[,2]),]
-	srDF <- df[(df$gReal%in%srG[,2]),]
+	DF <- df[!(df$gPred%in%srG[,2]),]
+	srDF <- df[(df$gPred%in%srG[,2]),]
+	#print(dim(DF))
+	#print(dim(srDF))
 	if (args[4] == "Kingdom") {
 		cat("\n"); print('Classifying at kingdom'); cat("\n")
 	        DF$pKingdom <- round((1 - predict(Kmod, Df, type = "response",allow.new.levels=TRUE)),2)

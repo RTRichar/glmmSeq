@@ -6,16 +6,18 @@ parser = argparse.ArgumentParser(description="")
 required = parser.add_argument_group('required arguments')
 optional = parser.add_argument_group('universal optional arguments')
 # required
-required.add_argument('-i', '--InputFasta', required = True, help = "\n Input file of reference sequences used to train the classifier (sequence headers should include a unique sequence identifier, NCBI accessions are recomended, preceded only by '>')\n")
-required.add_argument('-it', '--InputTax', required = True, help = "\n Input taxonomic lineages (a tab-delimited file with the first column containing unique sequence identifiers compatible with the files provided under '-i'). Normally, this would be in Metaxa2-compatible format, however, if lineages come directly from Taxonomizr, you can skip reformatting and declare '-tf True.' See below for more details.\n")
-required.add_argument('-odb', '--OutputDB', required = True, help = "\n Name of database to be produced by TRAIN_glmmSeq. This is the name of the directory that will hold the R GLMMs, fasta and taxonomy files of the resulting database. It will be written in the directory that holds the glmmSeq executables.\n")
+required.add_argument('-i', '--InputFasta', required = True, help = "\n Input file of reference sequences used to train the classifier. Sequence headers should include a unique sequence identifier, NCBI accessions are recomended, preceded only by '>'. Sequences should be contiguous\n")
+required.add_argument('-it', '--InputTax', required = True, help = "\n Input taxonomic lineages (a tab-delimited file with the first column containing unique sequence identifiers compatible with the files provided under '-i'). Normally, this would be in Metaxa2-compatible format.\n")
+required.add_argument('-odb', '--OutputDB', required = True, help = "\n Name of database to be produced by TRAIN_glmmSeq. This is the name of the directory that will hold the R GLMMs, fasta and taxonomy files of the resulting database. It will be written in /DBs/, within the directory that holds the glmmSeq executables.\n")
 #optional
 optional.add_argument('-t', '--Threads', required = False, default = 1, help = "\n Number of processors for Vsearch alignment\n")
-optional.add_argument('--SaveTemp', default=False, type=lambda x: (str(x).lower() == 'true'), help = "\n Option for saving intermediate files produced during training (e.g. fasta k-fold partitions and csv formatted cross validation resulst used for glmm fitting)\n")
-optional.add_argument('-id', '--idCutoffs', required = False, default = 1, help = "\n Option for specifying the minimum percent identity of Vsearch alignment matches to be used for glmm fitting. This is adjustable at each taxonomic rank and consists of a comma-separated list of 7 numbers representing the threshold used from kingdom to species (e.g the default of 50,50,60,60,65,75,85 means alignments of <= 50 percent ID will not be used during glmm modelling of the kigdom or phylum ranks) \n")
+optional.add_argument('--SaveTemp', default=False, type=lambda x: (str(x).lower() == 'true'), help = "\n Option for saving intermediate files produced during training (e.g. fasta k-fold partitions and csv formatted cross validation resulst used for glmm fitting). Must be 'True/False,' not 'TRUE/FALSE' or 'T/F.'\n")
+optional.add_argument('-id', '--idCutoffs', required = False, default = 1, help = "\n Option for specifying the minimum percent identity of Vsearch alignment matches to be used for glmm fitting. This is adjustable at each taxonomic rank and consists of a comma-separated list of 7 numbers representing the threshold used from kingdom to species (e.g the default of 50,50,60,60,65,75,85 means alignments of <= 50 percent ID will not be used during glmm modelling of the kigdom and phylum ranks) \n")
 optional.add_argument('-pcv', '--ProportionForCV', required = False, default = 0.2, help = "\n Size of the reference data partition used for cross-validation")
-optional.add_argument('-hr', '--HighestRank', required = False, type=str, default = 'Class', help = "\n Analyze to King, Phyl, or Class? default Class")
-optional.add_argument('-re', '--reStructure', required = False, type=str, default = 'Family', help = "\n reLevels to Fam, Gen or Sp? default Fam")
+#### change -pcv  to -k 
+optional.add_argument('-hr', '--HighestRank', required = False, type=str, default = 'Class', help = "\n Specifies the lowest resolution rank to be classified (Kingdom, Phylum, or Class). Default = Class")
+optional.add_argument('-re', '--reStructure', required = False, type=str, default = 'Family', help = "\n Specifies the random effect strucutre to used during modelling. reLevels to Fam, Gen or Sp? Default = SpeedGenus")
+# add in -fe fixed effect struture
 args = parser.parse_args()
 
 # Test if SaveTemp 'True' 'False,' not T/F or TRUE/FALSE

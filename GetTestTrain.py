@@ -53,9 +53,12 @@ for i in range(0,Parts):
 	for seq in PartLstsDct[i]:
 		UsedSeqsLst.append(seq)
 	SeqsNotUsed = []
-	for seq in fasta.keys(): # replace w/ diff(lst1,lst2) from split GWAS methods
-		if seq not in UsedSeqsLst: 
-			SeqsNotUsed.append(seq)
+	#TmpLst = diff(fasta.keys(),UsedSeqsLst)
+	for seq in diff(fasta.keys(),UsedSeqsLst):
+		SeqsNotUsed.append(seq)
+#	for seq in fasta.keys(): # replace w/ diff(lst1,lst2) from split GWAS methods
+#		if seq not in UsedSeqsLst: 
+#			SeqsNotUsed.append(seq)
 
 # for each part, write file
 for a in range(0,Parts):
