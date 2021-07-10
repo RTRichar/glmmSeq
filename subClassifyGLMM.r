@@ -80,8 +80,6 @@ if (args[5] == "SpeedGenus") { cat("\n"); print('Loading data'); cat("\n")
 	srG <- read.csv(file = paste(args[2], "/srGenera.csv", sep=''), header = TRUE)
 	DF <- df[!(df$gPred%in%srG[,2]),]
 	srDF <- df[(df$gPred%in%srG[,2]),]
-	#print(dim(DF))
-	#print(dim(srDF))
 	if (args[4] == "Kingdom") {
 		cat("\n"); print('Classifying at kingdom'); cat("\n")
 	        DF$pKingdom <- round((1 - predict(Kmod, Df, type = "response",allow.new.levels=TRUE)),2)

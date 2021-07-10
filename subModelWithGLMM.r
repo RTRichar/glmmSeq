@@ -15,12 +15,22 @@ ModSummary <- function(x) {
 	MyList <- list(Rsq,Smry)
 	return(MyList)}
 
+# 4 = highest rank
+# 5 = feStruct
+# 6 = idCuttofs
+# 7 = gRichness
+# 8 = sqrt
+
+
 # import data, name columns
 CV <- read.csv(args[1], header=FALSE, na.strings=c("","NA"))
 colnames(CV) <- c('GI','kReal','pReal','cReal','oReal','fReal','gReal','sReal','kPred','pPred','cPred','oPred','fPred','gPred','sPred','NA','Length','TopID','oScndID','fScndID','gScndID','sScndID','oTpHts','fTpHts','gTpHts','sTpHts')
 
 # Transform if specified
-CV$TopID <- CV$TopID^(1/2)
+if (args[8] == "True") {
+	x <- c('TopID','oScndID','fScndID','gScndID','sScndID')
+	for (i in x) { CV[,i] <- sqrt(CV[,i]) } 
+	# transform idCutoffs}
 
 # mark hits with only one hit to the top taxon
 CV$sTpHts <- ifelse(CV$sTpHts>1&CV$sTpHts<4,2,CV$sTpHts); CV$sTpHts <- ifelse(CV$sTpHts>3,3,CV$sTpHts); CV$sTpHts <- as.factor(CV$sTpHts)

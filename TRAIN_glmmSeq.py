@@ -16,8 +16,10 @@ optional.add_argument('-id', '--idCutoffs', required = False, default = 1, help 
 optional.add_argument('-pcv', '--ProportionForCV', required = False, default = 0.2, help = "\n Size of the reference data partition used for cross-validation")
 #### change -pcv  to -k 
 optional.add_argument('-hr', '--HighestRank', required = False, type=str, default = 'Class', help = "\n Specifies the lowest resolution rank to be classified (Kingdom, Phylum, or Class). Default = Class")
-optional.add_argument('-re', '--reStructure', required = False, type=str, default = 'Family', help = "\n Specifies the random effect strucutre to used during modelling. reLevels to Fam, Gen or Sp? Default = SpeedGenus")
-# add in -fe fixed effect struture
+optional.add_argument('-re', '--reStructure', required = False, type=str, default = 'SpeedGenus', help = "\n Specifies the random effect strucutre to used during modelling. Options include 'Family', 'Genus' and 'SpeedGenus'. 'SpeedGenus' splits cases according to whether they are in species-rich genera. For cases within species rich genera, genus and species models include (1|Order/Family/Genus) as random effect. For non-species-rich genera, random effect term is (1|Class/Order/Family). Default = SpeedGenus")
+optional.add_argument('-fe', '--feStructure', required = False, type=str, default = 'CategoricalScndID', help = "\n Specifies fixed effects for the model as either 'CategoricalScndID' or 'ContinuousScndID,' where the percent idenity of the alignmnet to the second highest scoring taxon is either included as a continuous variable or a binned categorical variable. If categorical, the percent identify distance between the first and second highest taxa is calculated. Default = 'CategoricalScndID'")
+optional.add_argument('-g', '--gRichness', required = False, default = 20, help = "\n Minimum number of species/genera for a genera to qualify as species-rich")
+optional.add_argument('-s', '--sqrt', required = False, type=str, default = 'True', help = "\n Option for square-root transforming alignment score percent identities. Should be 'True/False,' not 'TRUE/FALSE' or 'T/F.' Default = True")
 args = parser.parse_args()
 
 # Test if SaveTemp 'True' 'False,' not T/F or TRUE/FALSE
@@ -37,7 +39,7 @@ glmmSeqDirectory = os.path.abspath(os.path.dirname(sys.argv[0]))
 # make file to hold info on highest rank to analyze to and lowest rank for RE specification
 InfoFile = str(DBDIR + '/' + 'InfoFile.txt')
 with open(InfoFile, 'w') as File:
-	File.write(args.reStructure + ',' + args.HighestRank)
+	File.write(args.reStructure+';'+args.HighestRank+';'+args.feStructure+';'+args.idCutoffs+';'+args.gRichness)
 
 # Split into test train
 sys.stderr.write('\n### ' + time.ctime(time.time()) + ': Partitioning k-fold testing/training sets ###\n')
@@ -71,7 +73,8 @@ subprocess.call(['CurateForLogReg.py', str(CTEMPDIR+'/CV.mtxa.tax'), args.InputT
 
 # R file to train on LogReg (must save ModGLMM:
 sys.stderr.write('\n### ' + time.ctime(time.time()) + ': Modelling data with binomial GLMMs ###\n\n')
-subprocess.call(['subModelWithGLMM.r', str(CTEMPDIR+'/CV.LogReg.csv'), DBDIR, args.reStructure, args.HighestRank])
+subprocess.call(['subModelWithGLMM.r', str(CTEMPDIR+'/CV.LogReg.csv'), DBDIR, args.reStructure, args.HighestRank, \
+	args.feStructure, args.idCutoffs, args.gRichness, args.sqrt])
 
 # save consensus filtered fasta and tax to db directory under 'DB.fa' and 'DB.tax'
 sys.stderr.write('\n### ' + time.ctime(time.time()) + ': Writing database files and cleaning up tmp files ###\n\n')
