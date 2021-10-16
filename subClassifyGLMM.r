@@ -1,7 +1,10 @@
 #!/usr/bin/env Rscript
 args = commandArgs(trailingOnly=TRUE)
 
-# args[1]: Metaxa2 formated tax lineages, args[2] dabatase path, args[3] outfile, args[4] highest rank analyzed 
+#subClassifyGLMM.r 1:LogRegFile,2:dbName,3:output,4:HighestRank,5:reStructure,6:feStructure,7:idCutoffs,8:gRichness,9:sqrt
+# probably don't need idCutoffs
+# probably don't need gRichness
+
 
 library(MuMIn)
 library(glmmTMB)
@@ -16,15 +19,24 @@ if (args[4] == "Class") {
 load(paste(args[2], "OrderGLMM.rda", sep=''))
 load(paste(args[2], "FamilyGLMM.rda", sep=''))
 load(paste(args[2], "GenusGLMM.rda", sep=''))
+# if you need srGenus
 load(paste(args[2], "srGenusGLMM.rda", sep=''))
 load(paste(args[2], "SpeciesGLMM.rda", sep=''))
+# if you need srGenus
 load(paste(args[2], "srSpeciesGLMM.rda", sep=''))
 
 df <- read.csv(args[1], header=FALSE, na.strings=c("","NA"))
 colnames(df) <- c('GI','kPred','pPred','cPred','oPred','fPred','gPred','sPred','na','TopID','Length','oScndID','fScndID','gScndID','sScndID','oTpHts','fTpHts','gTpHts','sTpHts')
 
 # Transform TopID if specified
-df$TopID <- df$TopID^(1/2)
+# use loop from subModel.r
+#df$TopID <- df$TopID^(1/2)
+if (args[9] == "True") {
+	x <- c('TopID','oScndID','fScndID','gScndID','sScndID')
+	for (i in x) { df[,i] <- sqrt(df[,i]) } }
+	#idCutoffs <- sqrt(as.numeric(as.character(unlist(strsplit(args[7], ",")))))
+	#print(paste('idCutoffs: ',idCutoffs,sep=''))
+#} else { idCutoffs <- as.numeric(as.character(unlist(strsplit(args[7], ",")))) }
 
 # mark hits with only one hit to the top taxon
 df$sTpHts <- ifelse(df$sTpHts>1&df$sTpHts<4,2,df$sTpHts); df$sTpHts <- ifelse(df$sTpHts>3,3,df$sTpHts); df$sTpHts <- as.factor(df$sTpHts)

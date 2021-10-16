@@ -1,9 +1,8 @@
 #!/usr/bin/env python 
 
-#--$ python GetTestTrain.py input.fasta outbase ProportonForCV
+#--$ python GetTestTrain.py input.fasta outbase k-folds  # (used to be ProportonForCV)
 
 import sys
-#from collections import defaultdict
 import random
 import time
 
@@ -12,12 +11,6 @@ sys.stderr.write('\n\n### ' + time.ctime(time.time()) + '\n\n')
 def diff(list1, list2):
 	return list(set(list1).symmetric_difference(set(list2)))
 
-# populate dictionary with fasta
-#fasta = defaultdict(list)
-#with open(sys.argv[1]) as file_one:
-#    for line in file_one:
-#        if line.startswith(">"):
-#            fasta[line.strip(">\n")].append(next(file_one).rstrip())
 fasta = {}
 FastStatus = str('\n') # printed after fasta is parsed, tells user if fasta had duplicates
 with open(sys.argv[1], 'r') as Fasta:
@@ -33,14 +26,21 @@ with open(sys.argv[1], 'r') as Fasta:
 		fasta[header] = line.strip()
 sys.stderr.write(FastStatus)
 
+# set number of partitions
+Parts = int(sys.argv[3])
+print(str(Parts))
+Prop = float(1)/int(sys.argv[3])
+print(str(Prop))
+
 # set number of seqs to retrieve
 count = {'count': 0}
 for key in fasta:
 	count['count'] += 1
-SampleSize = int(count['count'] * float(sys.argv[3]))
+SampleSize = int(count['count'] * Prop)
+print(str(SampleSize))
 
 # set number of partitions
-Parts = int(1/float(sys.argv[3]))
+#Parts = int(1/float(sys.argv[3]))
 
 sys.stderr.write('\n\n### performing ' + str(Parts) + '-fold partitioning of the reference data' + '\n\n')
 
@@ -53,12 +53,8 @@ for i in range(0,Parts):
 	for seq in PartLstsDct[i]:
 		UsedSeqsLst.append(seq)
 	SeqsNotUsed = []
-	#TmpLst = diff(fasta.keys(),UsedSeqsLst)
 	for seq in diff(fasta.keys(),UsedSeqsLst):
 		SeqsNotUsed.append(seq)
-#	for seq in fasta.keys(): # replace w/ diff(lst1,lst2) from split GWAS methods
-#		if seq not in UsedSeqsLst: 
-#			SeqsNotUsed.append(seq)
 
 # for each part, write file
 for a in range(0,Parts):

@@ -4,16 +4,16 @@ import subprocess, argparse, sys, time, os
 
 parser = argparse.ArgumentParser(description="")
 required = parser.add_argument_group('required arguments')
-optional = parser.add_argument_group('universal optional arguments')
+optional = parser.add_argument_group('optional arguments')
 # required
 required.add_argument('-i', '--InputFasta', required = True, help = "\n Input file of reference sequences used to train the classifier. Sequence headers should include a unique sequence identifier, NCBI accessions are recomended, preceded only by '>'. Sequences should be contiguous\n")
 required.add_argument('-it', '--InputTax', required = True, help = "\n Input taxonomic lineages (a tab-delimited file with the first column containing unique sequence identifiers compatible with the files provided under '-i'). Normally, this would be in Metaxa2-compatible format.\n")
 required.add_argument('-odb', '--OutputDB', required = True, help = "\n Name of database to be produced by TRAIN_glmmSeq. This is the name of the directory that will hold the R GLMMs, fasta and taxonomy files of the resulting database. It will be written in /DBs/, within the directory that holds the glmmSeq executables.\n")
 #optional
-optional.add_argument('-t', '--Threads', required = False, default = 1, help = "\n Number of processors for Vsearch alignment\n")
+optional.add_argument('-t', '--Threads', required = False, default = 1, help = "\n Number of processors (only affects vsearch alignment speed)\n")
 optional.add_argument('--SaveTemp', default=False, type=lambda x: (str(x).lower() == 'true'), help = "\n Option for saving intermediate files produced during training (e.g. fasta k-fold partitions and csv formatted cross validation resulst used for glmm fitting). Must be 'True/False,' not 'TRUE/FALSE' or 'T/F.'\n")
-optional.add_argument('-id', '--idCutoffs', required = False, default = 1, help = "\n Option for specifying the minimum percent identity of Vsearch alignment matches to be used for glmm fitting. This is adjustable at each taxonomic rank and consists of a comma-separated list of 7 numbers representing the threshold used from kingdom to species (e.g the default of 50,50,60,60,65,75,85 means alignments of <= 50 percent ID will not be used during glmm modelling of the kigdom and phylum ranks) \n")
-optional.add_argument('-pcv', '--ProportionForCV', required = False, default = 0.2, help = "\n Size of the reference data partition used for cross-validation")
+optional.add_argument('-id', '--idCutoffs', required = False, default = '30,40,50,60,70,80,85', help = "\n Option for specifying the minimum percent identity of Vsearch alignment matches to be used for glmm fitting. This is adjustable at each taxonomic rank and consists of a comma-separated list of 7 numbers representing the threshold used from kingdom to species (e.g the default of 30,40,50,60,70,80,85 means alignments of < 30 percent ID will not be used during glmm modelling at the kigdom rank) \n")
+optional.add_argument('-k', '--kFolds', required = False, default = 5, help = "\n Number of k-folds partitions to use during reference cross-alignment and glmm modelling")
 #### change -pcv  to -k 
 optional.add_argument('-hr', '--HighestRank', required = False, type=str, default = 'Class', help = "\n Specifies the lowest resolution rank to be classified (Kingdom, Phylum, or Class). Default = Class")
 optional.add_argument('-re', '--reStructure', required = False, type=str, default = 'SpeedGenus', help = "\n Specifies the random effect strucutre to used during modelling. Options include 'Family', 'Genus' and 'SpeedGenus'. 'SpeedGenus' splits cases according to whether they are in species-rich genera. For cases within species rich genera, genus and species models include (1|Order/Family/Genus) as random effect. For non-species-rich genera, random effect term is (1|Class/Order/Family). Default = SpeedGenus")
@@ -39,21 +39,23 @@ glmmSeqDirectory = os.path.abspath(os.path.dirname(sys.argv[0]))
 # make file to hold info on highest rank to analyze to and lowest rank for RE specification
 InfoFile = str(DBDIR + '/' + 'InfoFile.txt')
 with open(InfoFile, 'w') as File:
-	File.write(args.reStructure+';'+args.HighestRank+';'+args.feStructure+';'+args.idCutoffs+';'+args.gRichness)
+	File.write(args.reStructure+';'+args.HighestRank+';'+args.feStructure+';'+str(args.idCutoffs)+';'+str(args.gRichness)+';'+str(args.sqrt))
+#################################33 -------------- Problem with this file, only printing first couple of things....
+# think this is fixed now
 
 # Split into test train
 sys.stderr.write('\n### ' + time.ctime(time.time()) + ': Partitioning k-fold testing/training sets ###\n')
-subprocess.call(['GetTestTrain.py', str(args.InputFasta), str(CTEMPDIR+'/'), str(args.ProportionForCV)])
+subprocess.call(['GetTestTrain.py', str(args.InputFasta), str(CTEMPDIR+'/'), str(args.kFolds)])
 
 # Run Vsearch algnmnt
 sys.stderr.write('\n### ' + time.ctime(time.time()) + ': Running vsearch alignments ###\n\n')
-Parts = str(int(1/float(args.ProportionForCV)))
-for i in range(0,int(1/float(args.ProportionForCV))): # get files for inferring percent ID of top hit taxon
+Parts = str(int(args.kFolds))
+for i in range(0,int(args.kFolds)): # get files for inferring percent ID of top hit taxon
 	subprocess.call(['vsearch', '--usearch_global', str(CTEMPDIR+'/'+str(i)+'_Test.fasta'), '--db', str(CTEMPDIR+'/'+str(i)+'_Train.fasta'), '--id', \
 	'0.6', '--maxaccepts', '100', '--maxrejects', '50', '--maxhits', '1', '--gapopen', '0TE', '--gapext', '0TE', '--userout', \
 	str(CTEMPDIR+'/'+str(i)+'_CV.vsrch.txt'), '--userfields', 'query+target+id+alnlen+mism+opens+qlo+qhi+tlo+thi+evalue+bits+qcov', '--query_cov', \
 	'0.95', '--threads', str(args.Threads)]) # could skip this and pull the first hit from the top 50 VSEARCH run (next line)
-for i in range(0,int(1/float(args.ProportionForCV))): # get files for inferring percent ID of second-to-top hit taxon
+for i in range(0,int(args.kFolds)): # get files for inferring percent ID of second-to-top hit taxon
 	subprocess.call(['vsearch', '--usearch_global', str(CTEMPDIR+'/'+str(i)+'_Test.fasta'), '--db', str(CTEMPDIR+'/'+str(i)+'_Train.fasta'), '--id', \
 	'0.6', '--maxaccepts', '100', '--maxrejects', '50', '--maxhits', '50', '--gapopen', '0TE', '--gapext', '0TE', '--userout', \
 	str(CTEMPDIR+'/'+str(i)+'_CV_2nd.vsrch.txt'), '--userfields', 'query+target+id+alnlen+mism+opens+qlo+qhi+tlo+thi+evalue+bits+qcov', '--query_cov', \
@@ -74,7 +76,7 @@ subprocess.call(['CurateForLogReg.py', str(CTEMPDIR+'/CV.mtxa.tax'), args.InputT
 # R file to train on LogReg (must save ModGLMM:
 sys.stderr.write('\n### ' + time.ctime(time.time()) + ': Modelling data with binomial GLMMs ###\n\n')
 subprocess.call(['subModelWithGLMM.r', str(CTEMPDIR+'/CV.LogReg.csv'), DBDIR, args.reStructure, args.HighestRank, \
-	args.feStructure, args.idCutoffs, args.gRichness, args.sqrt])
+	args.feStructure, str(args.idCutoffs), str(args.gRichness), str(args.sqrt)])
 
 # save consensus filtered fasta and tax to db directory under 'DB.fa' and 'DB.tax'
 sys.stderr.write('\n### ' + time.ctime(time.time()) + ': Writing database files and cleaning up tmp files ###\n\n')
