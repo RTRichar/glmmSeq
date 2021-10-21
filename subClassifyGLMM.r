@@ -55,31 +55,31 @@ df$oDist <- ifelse(df$oDist<1,1,df$oDist); df$oDist <- ifelse(df$oDist>1,2,df$oD
 # if -re == Family or Genus
 if (args[5] == "Family" | args[5] == "Genus") {
 	NewDF <- as.data.frame(df[,1]); colnames(NewDF) <- c('Accession')
-	NewDF$Kingdom <- df$kReal
+	NewDF$Kingdom <- df$kPred
 	if (args[4] == "Kingdom") {
 		NewDF$pKingdom <- round((1 - predict(Kmod, df, type = "response",allow.new.levels=TRUE)),2)
 		NewDF$pKingdom <- ifelse(NewDF$pKingdom > 0.95, NewDF$pKingdom, NA)
 	} else { NewDF$pKingdom <- NA }
-	NewDF$Phylum <- df$pReal
+	NewDF$Phylum <- df$pPred
 	if (args[4] == "Phylum") {
 		NewDF$pPhylum <- round((1 - predict(Pmod, df, type = "response",allow.new.levels=TRUE)),2)
 		NewDF$pPhylum <- ifelse(NewDF$pPhylum > 0.95, NewDF$pPhylum, NA)
 	} else { NewDF$pPhylum <- NA }
-	NewDF$Class <- df$cReal
+	NewDF$Class <- df$cPred
 	if (args[4] == "Class") {
 		NewDF$pClass <- round((1 - predict(Cmod, df, type = "response",allow.new.levels=TRUE)),2)
 		NewDF$pClass <- ifelse(NewDF$pClass > 0.95, NewDF$pClass, NA)
 	} else { NewDF$pClass <- NA }
-	NewDF$Order <- df$oReal
+	NewDF$Order <- df$oPred
 	NewDF$pOrder <- round((1 - predict(Omod, df, type = "response",allow.new.levels=TRUE)),2)
 	NewDF$pOrder <- ifelse(NewDF$pOrder > 0.95, NewDF$pOrder, NA)
-	NewDF$Family <- df$fReal
+	NewDF$Family <- df$fPred
 	NewDF$pFamily <- round((1 - predict(Fmod, df, type = "response",allow.new.levels=TRUE)),2)
 	NewDF$pFamily <- ifelse(NewDF$pFamily > 0.95, NewDF$pFamily, NA)
-	NewDF$Genus <- df$gReal
+	NewDF$Genus <- df$gPred
 	NewDF$pGenus <- round((1 - predict(Gmod, df, type = "response",allow.new.levels=TRUE)),2)
 	NewDF$pGenus <- ifelse(NewDF$pFamily > 0.95, NewDF$pGenus, NA)
-	NewDF$Species <- df$sReal
+	NewDF$Species <- df$sPred
 	NewDF$pSpecies <- round((1 - predict(Smod, df, type = "response",allow.new.levels=TRUE)),2)
 	NewDF$pSpecies <- ifelse(NewDF$pGenus>0.95, NewDF$pSpecies, NA)
 	write.table(NewDF, args[3], row.names = FALSE, col.names = FALSE, sep=",", quote=FALSE) }

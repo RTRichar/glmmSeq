@@ -18,10 +18,12 @@ library(glmmTMB)
 library(pROC)
 
 # could use function to adjust verbosity
-ModSummary <- function(x) {
+ModSummary <- function(x,r) {
 	Rsq <- r.squaredGLMM(x)
 	#Smry <- summary(x)
-	MyList <- list(Rsq) #,Smry)
+	CV[,'Pred'] <- predict(x,newdata=CV,type=c("response"), allow.new.levels = T)
+	roccurve<-roc(CV[,r]~CV[,'Pred'])
+	MyList <- list(Rsq, auc(roccurve)) #,Smry)
 	return(MyList)}
 
 # import data, name columns
@@ -66,8 +68,8 @@ if (args[4] == "Phylum") {
 if (args[4] == "Kingdom") {
 	CV$k <- ifelse(as.character(CV$kPred)!=as.character(CV$kReal) & !is.na(CV$kPred) & !is.na(CV$kReal), 1, 0) }
 
-print(head(CV))
-print(class(CV$oTpHts))
+#print(head(CV))
+#print(class(CV$oTpHts))
 #print(range(CV$oTpHts, na.rm = T))
 #print(range(CV$fTpHts, na.rm = T))
 
@@ -79,57 +81,57 @@ if (args[4] == "Kingdom") {
 	cat("\n"); print('producing kingdom model'); cat("\n")
 	CV <- subset(CV, CV$TopID >= idCutoffs[1]) # could make CV2, then draw from that in case someone wants looser cutoff lower down for some odd reason 
 	Kmod <- glmmTMB(k ~ TopID + (TopID|kPred), data = CV, family = binomial()) 
-	save(Kmod, file = paste(args[2], '/', "KingdomGLMM.rda", sep='')); print(ModSummary(Kmod)) }
+	save(Kmod, file = paste(args[2], '/', "KingdomGLMM.rda", sep='')) }
 # running phylum modelling
 if (args[4] == "Phylum" | args[4] == "Kingdom") {
 	cat("\n"); print('producing phylum model'); cat("\n")
 	CV <- subset(CV, CV$TopID >= idCutoffs[2])
 	Pmod <- glmmTMB(p ~ TopID + (TopID|kPred/pPred), data = CV, family = binomial()) 
-	save(Pmod, file = paste(args[2], "/PhylumGLMM.rda", sep='')); print(ModSummary(Pmod)) }
+	save(Pmod, file = paste(args[2], "/PhylumGLMM.rda", sep='')) }
 # running class modelling
 if (args[4] == "Class" | args[4] == "Phylum" | args[4] == "Kingdom"){
 	cat("\n"); print('producing class model'); cat("\n")
 	CV <- subset(CV, CV$TopID >= idCutoffs[3])
 	Cmod <- glmmTMB(c ~ TopID + (TopID|pPred/cPred), data = CV, family = binomial()) # nest to class
-	save(Cmod, file = paste(args[2], '/', "ClassGLMM.rda", sep='')); print(ModSummary(Cmod)) }
+	save(Cmod, file = paste(args[2], '/', "ClassGLMM.rda", sep='')) }
 # running order modelling
 cat("\n"); print('producing order model'); cat("\n")
 CV <- subset(CV, CV$TopID >= idCutoffs[4])
 #Omod <- glmmTMB(o ~ TopID + (1|oTpHts) + (1|oDist) + (TopID|cPred/oPred), data = CV, family = binomial()) # nest to order ### + V17
 Omod <- glmmTMB(o ~ TopID + (TopID|cPred/oPred), data = CV, family = binomial()) # nest to order ### + V17
-save(Omod, file = paste(args[2], '/', "OrderGLMM.rda", sep='')); print(ModSummary(Omod))
+save(Omod, file = paste(args[2], '/', "OrderGLMM.rda", sep=''))
 # running family modelling
 cat("\n"); print('producing family model'); cat("\n")
 CV <- subset(CV, CV$TopID >= idCutoffs[5])
 Fmod <- glmmTMB(f ~ TopID + (1|fTpHts) + (1|fDist) + (TopID|cPred/oPred/fPred), data = CV, family = binomial()) # nest glmm down to family
-save(Fmod, file = paste(args[2], '/', "FamilyGLMM.rda", sep='')); print(ModSummary(Fmod))#; print(summary(Fmod))
+save(Fmod, file = paste(args[2], '/', "FamilyGLMM.rda", sep='')); print(ModSummary(Fmod,'f'))#; print(summary(Fmod))
 # running Genus and species modelling, -re == Family
 if (args[3] == "Family") {
 	cat("\n"); print('producing genus model w/ family as lowest random intercept term'); cat("\n")
 	CV <- subset(CV, CV$TopID >= idCutoffs[6])
 	Gmod <- glmmTMB(g ~ TopID + (1|gTpHts) + (1|gDist) + (TopID|cPred/oPred/fPred), data = CV, family = binomial()) 
 	#CV$Pred <- predict(Gmod,newdata=CV,type=c("response"), allow.new.levels = T); roccurve<-roc(CV$g~CV$Pred); print(auc(roccurve))
-	save(Gmod, file = paste(args[2], '/', "GenusGLMM.rda", sep='')); print(ModSummary(Gmod))
+	save(Gmod, file = paste(args[2], '/', "GenusGLMM.rda", sep='')); print(ModSummary(Gmod,'g'))
 	cat("\n"); print('producing species model w/ family as lowest random intercept term'); cat("\n\n")
 	CV <- subset(CV, CV$TopID >= idCutoffs[7])
 	Smod <- glmmTMB(s ~ TopID + (1|sTpHts) + (1|sDist) + (TopID|cPred/oPred/fPred), data = CV, family = binomial())
-	save(Smod, file = paste(args[2], '/', "SpeciesGLMM.rda", sep='')); print(ModSummary(Smod)) }
+	save(Smod, file = paste(args[2], '/', "SpeciesGLMM.rda", sep='')); print(ModSummary(Smod,'s')) }
 # running Genus and species modelling, -re == Family
 if (args[3] == "Genus") {
 	cat("\n"); print('producing genus model w/ genus as lowest random intercept term'); cat("\n")
 	CV <- subset(CV, CV$TopID >= idCutoffs[6])
 	Gmod <- glmmTMB(g ~ TopID + (1|gTpHts) + (1|gDist) + (TopID|oPred/fPred/gPred), data = CV, family = binomial())
-	save(Gmod, file = paste(args[2], '/', "GenusGLMM.rda", sep='')); print(ModSummary(Gmod))
+	save(Gmod, file = paste(args[2], '/', "GenusGLMM.rda", sep='')); print(ModSummary(Gmod,'g'))
 	cat("\n"); print('producing species model w/ genus as lowest random intercept term'); cat("\n\n")
 	CV <- subset(CV, CV$TopID >= idCutoffs[7])
 	Smod <- glmmTMB(s ~ TopID + (1|sTpHts) + (1|sDist) + (TopID|oPred/fPred/gPred), data = CV, family = binomial())
-	save(Smod, file = paste(args[2], '/', "SpeciesGLMM.rda", sep='')); print(ModSummary(Smod)) }
+	save(Smod, file = paste(args[2], '/', "SpeciesGLMM.rda", sep='')); print(ModSummary(Smod,'s')) }
 # default to family but include options for accelerated genus level random effect implementation
 if (args[3] == "SpeedGenus") {
         cat("\n"); print('producing genus models w/ speed genus option'); cat("\n")
         CV <- subset(CV, CV$TopID >= idCutoffs[6])
         Gmod <- glmmTMB(g ~ TopID + (1|gTpHts) + (1|gDist) + (TopID|cPred/oPred/fPred), data = CV, family = binomial())
-        save(Gmod, file = paste(args[2], '/', "GenusGLMM.rda", sep='')); print(ModSummary(Gmod))
+        save(Gmod, file = paste(args[2], '/', "GenusGLMM.rda", sep='')); print(ModSummary(Gmod,'g'))
 	Genera <- unique(levels(CV$gReal))
 	GenusDF <- as.data.frame(matrix(nrow=0,ncol=ncol(CV)))
 	colnames(GenusDF) <- colnames(CV)
@@ -141,13 +143,13 @@ if (args[3] == "SpeedGenus") {
 		if (NumSpp >= 15 & NumCases >= 30) { GenusDF <- rbind(GenusDF,tmpDF) } } # GenusDF is df used to model species rich genera
 	cat("\n"); print(paste('Number of time-consuming, species rich genera: ',length(unique(levels(droplevels(GenusDF$gReal)))),sep='')); cat("\n")
 	srGmod <- glmmTMB(g ~ TopID + (1|gTpHts) + (1|gDist) + (TopID|oPred/fPred/gPred), data = GenusDF, family = binomial())
-	save(srGmod, file = paste(args[2], '/', "srGenusGLMM.rda", sep='')); print(ModSummary(srGmod))
+	save(srGmod, file = paste(args[2], '/', "srGenusGLMM.rda", sep='')); print(ModSummary(srGmod,'g'))
 	cat("\n"); print('producing species models w/ speed genus option'); cat("\n")
 	CV <- subset(CV, CV$TopID >= idCutoffs[7])
 	GenusDF <- subset(GenusDF, GenusDF$TopID >= idCutoffs[7])
 	Smod <- glmmTMB(s ~ TopID + (1|sTpHts) + (1|sDist) + (TopID|cPred/oPred/fPred), data = CV, family = binomial())
-	save(Smod, file = paste(args[2], '/', "SpeciesGLMM.rda", sep='')); print(ModSummary(Smod))
+	save(Smod, file = paste(args[2], '/', "SpeciesGLMM.rda", sep='')); print(ModSummary(Smod,'s'))
 	srSmod <- glmmTMB(s ~ TopID + (1|sTpHts) + (1|sDist) + (TopID|oPred/fPred/gPred), data = GenusDF, family = binomial())
-	save(srSmod, file = paste(args[2], '/', "srSpeciesGLMM.rda", sep='')); print(ModSummary(srSmod))
+	save(srSmod, file = paste(args[2], '/', "srSpeciesGLMM.rda", sep='')); print(ModSummary(srSmod,'s'))
 	srG <- unique(levels(droplevels(GenusDF$gReal)))
 	write.csv(srG, file = paste(args[2], "/srGenera.csv", sep=''))} # write species rich genera to file
