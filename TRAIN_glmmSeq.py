@@ -13,11 +13,11 @@ required.add_argument('-odb', '--OutputDB', required = True, help = "\n Name of 
 optional.add_argument('-t', '--Threads', required = False, default = 1, help = "\n Number of processors (only affects vsearch alignment speed)\n")
 optional.add_argument('--SaveTemp', default=False, type=lambda x: (str(x).lower() == 'true'), help = "\n Option for saving intermediate files produced during training (e.g. fasta k-fold partitions and csv formatted cross validation resulst used for glmm fitting). Must be 'True/False,' not 'TRUE/FALSE' or 'T/F.'\n")
 optional.add_argument('-id', '--idCutoffs', required = False, default = '30,40,50,60,70,80,85', help = "\n Option for specifying the minimum percent identity of Vsearch alignment matches to be used for glmm fitting. This is adjustable at each taxonomic rank and consists of a comma-separated list of 7 numbers representing the threshold used from kingdom to species (e.g the default of 30,40,50,60,70,80,85 means alignments of < 30 percent ID will not be used during glmm modelling at the kigdom rank) \n")
-optional.add_argument('-k', '--kFolds', required = False, default = 5, help = "\n Number of k-folds partitions to use during reference cross-alignment and glmm modelling")
+optional.add_argument('-k', '--kFolds', required = False, default = 10, help = "\n Number of k-folds partitions to use during reference cross-alignment and glmm modelling")
 #### change -pcv  to -k 
-optional.add_argument('-hr', '--HighestRank', required = False, type=str, default = 'Class', help = "\n Specifies the lowest resolution rank to be classified (Kingdom, Phylum, or Class). Default = Class")
-optional.add_argument('-re', '--reStructure', required = False, type=str, default = 'SpeedGenus', help = "\n Specifies the random effect strucutre to used during modelling. Options include 'Family', 'Genus' and 'SpeedGenus'. 'SpeedGenus' splits cases according to whether they are in species-rich genera. For cases within species rich genera, genus and species models include (1|Order/Family/Genus) as random effect. For non-species-rich genera, random effect term is (1|Class/Order/Family). Default = SpeedGenus")
-optional.add_argument('-fe', '--feStructure', required = False, type=str, default = 'CategoricalScndID', help = "\n Specifies fixed effects for the model as either 'CategoricalScndID' or 'ContinuousScndID,' where the percent idenity of the alignmnet to the second highest scoring taxon is either included as a continuous variable or a binned categorical variable. If categorical, the percent identify distance between the first and second highest taxa is calculated. Default = 'CategoricalScndID'")
+optional.add_argument('-hr', '--HighestRank', required = False, type=str, default = 'Order', help = "\n Specifies the lowest resolution rank to be classified (Kingdom, Phylum, Class, or Order). Default = Class")
+optional.add_argument('-re', '--reStructure', required = False, type=str, default = 'Family', help = "\n Specifies the random effect strucutre to used during modelling. Options include 'Family', 'Genus' and 'SpeedGenus'. 'SpeedGenus' splits cases according to whether they are in species-rich genera. For cases within species rich genera, genus and species models include (1|Order/Family/Genus) as random effect. For non-species-rich genera, random effect term is (1|Class/Order/Family). Default = SpeedGenus")
+optional.add_argument('-m', '--ModelStructure', required = False, type=str, default = 'FullModel', help = "\n Provides some options of varying model structure with respect to both random effects and fixed effects. Options include FullModel, MidModel, ReducedModel and MinModel. FullModel: Includes categorically binned 'mumber of top hits' and 'distance between 1st and 2nd top taxon' as random intercept and slope effects with subject taxonomy as random intercept and slope. MidModel: Includes categorically binned 'mumber of top hits' and 'distance between 1st and 2nd top taxon' as random intercept and slope effects with subject taxonomy as random intercept. ReducedModel: Includes subject taxonomy as random intercept and slope. MinModel: Includes subject taxonomy as random intercept.")
 optional.add_argument('-g', '--gRichness', required = False, default = 20, help = "\n Minimum number of species/genera for a genera to qualify as species-rich")
 optional.add_argument('-s', '--sqrt', required = False, type=str, default = 'True', help = "\n Option for square-root transforming alignment score percent identities. Should be 'True/False,' not 'TRUE/FALSE' or 'T/F.' Default = True")
 args = parser.parse_args()
@@ -39,9 +39,7 @@ glmmSeqDirectory = os.path.abspath(os.path.dirname(sys.argv[0]))
 # make file to hold info on highest rank to analyze to and lowest rank for RE specification
 InfoFile = str(DBDIR + '/' + 'InfoFile.txt')
 with open(InfoFile, 'w') as File:
-	File.write(args.reStructure+';'+args.HighestRank+';'+args.feStructure+';'+str(args.idCutoffs)+';'+str(args.gRichness)+';'+str(args.sqrt))
-#################################33 -------------- Problem with this file, only printing first couple of things....
-# think this is fixed now
+	File.write(args.reStructure+';'+args.HighestRank+';'+args.ModelStructure+';'+str(args.idCutoffs)+';'+str(args.gRichness)+';'+str(args.sqrt))
 
 # Split into test train
 sys.stderr.write('\n### ' + time.ctime(time.time()) + ': Partitioning k-fold testing/training sets ###\n')
@@ -76,7 +74,7 @@ subprocess.call(['CurateForLogReg.py', str(CTEMPDIR+'/CV.mtxa.tax'), args.InputT
 # R file to train on LogReg (must save ModGLMM:
 sys.stderr.write('\n### ' + time.ctime(time.time()) + ': Modelling data with binomial GLMMs ###\n\n')
 subprocess.call(['subModelWithGLMM.r', str(CTEMPDIR+'/CV.LogReg.csv'), DBDIR, args.reStructure, args.HighestRank, \
-	args.feStructure, str(args.idCutoffs), str(args.gRichness), str(args.sqrt)])
+	args.ModelStructure, str(args.idCutoffs), str(args.gRichness), str(args.sqrt)])
 
 # save consensus filtered fasta and tax to db directory under 'DB.fa' and 'DB.tax'
 sys.stderr.write('\n### ' + time.ctime(time.time()) + ': Writing database files and cleaning up tmp files ###\n\n')

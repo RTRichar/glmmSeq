@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 args = commandArgs(trailingOnly=TRUE)
 
-#subClassifyGLMM.r 1:LogRegFile,2:dbName,3:output,4:HighestRank,5:reStructure,6:feStructure,7:idCutoffs,8:gRichness,9:sqrt
+#subClassifyGLMM.r 1:LogRegFile,2:dbName,3:output,4:HighestRank,5:reStructure,6:ModelStructure,7:idCutoffs,8:gRichness,9:sqrt
 
 # probably don't need idCutoffs
 # probably don't need gRichness
@@ -58,30 +58,32 @@ if (args[5] == "Family" | args[5] == "Genus") {
 	NewDF$Kingdom <- df$kPred
 	if (args[4] == "Kingdom") {
 		NewDF$pKingdom <- round((1 - predict(Kmod, df, type = "response",allow.new.levels=TRUE)),2)
-		NewDF$pKingdom <- ifelse(NewDF$pKingdom > 0.95, NewDF$pKingdom, NA)
+		NewDF$pKingdom <- ifelse(NewDF$pKingdom > 0.6, NewDF$pKingdom, NA)
 	} else { NewDF$pKingdom <- NA }
 	NewDF$Phylum <- df$pPred
-	if (args[4] == "Phylum") {
+	if (args[4] == "Phylum" | args[4] == "Kingdom") {
 		NewDF$pPhylum <- round((1 - predict(Pmod, df, type = "response",allow.new.levels=TRUE)),2)
-		NewDF$pPhylum <- ifelse(NewDF$pPhylum > 0.95, NewDF$pPhylum, NA)
+		NewDF$pPhylum <- ifelse(NewDF$pPhylum > 0.6, NewDF$pPhylum, NA)
 	} else { NewDF$pPhylum <- NA }
 	NewDF$Class <- df$cPred
-	if (args[4] == "Class") {
+	if (args[4] == "Class" | args[4] == "Phylum" | args[4] == "Kingdom") {
 		NewDF$pClass <- round((1 - predict(Cmod, df, type = "response",allow.new.levels=TRUE)),2)
-		NewDF$pClass <- ifelse(NewDF$pClass > 0.95, NewDF$pClass, NA)
+		NewDF$pClass <- ifelse(NewDF$pClass > 0.6, NewDF$pClass, NA)
 	} else { NewDF$pClass <- NA }
 	NewDF$Order <- df$oPred
-	NewDF$pOrder <- round((1 - predict(Omod, df, type = "response",allow.new.levels=TRUE)),2)
-	NewDF$pOrder <- ifelse(NewDF$pOrder > 0.95, NewDF$pOrder, NA)
+	if (args[4] == "Order" | args[4] == "Class" | args[4] == "Phylum" | args[4] == "Kingdom") {
+		NewDF$pOrder <- round((1 - predict(Omod, df, type = "response",allow.new.levels=TRUE)),2)
+		NewDF$pOrder <- ifelse(NewDF$pOrder > 0.6, NewDF$pOrder, NA)
+	} else { NewDF$pOrder <- NA }
 	NewDF$Family <- df$fPred
 	NewDF$pFamily <- round((1 - predict(Fmod, df, type = "response",allow.new.levels=TRUE)),2)
-	NewDF$pFamily <- ifelse(NewDF$pFamily > 0.95, NewDF$pFamily, NA)
+	NewDF$pFamily <- ifelse(NewDF$pFamily > 0.6, NewDF$pFamily, NA)
 	NewDF$Genus <- df$gPred
 	NewDF$pGenus <- round((1 - predict(Gmod, df, type = "response",allow.new.levels=TRUE)),2)
-	NewDF$pGenus <- ifelse(NewDF$pFamily > 0.95, NewDF$pGenus, NA)
+	NewDF$pGenus <- ifelse(NewDF$pFamily > 0.6, NewDF$pGenus, NA)
 	NewDF$Species <- df$sPred
 	NewDF$pSpecies <- round((1 - predict(Smod, df, type = "response",allow.new.levels=TRUE)),2)
-	NewDF$pSpecies <- ifelse(NewDF$pGenus>0.95, NewDF$pSpecies, NA)
+	NewDF$pSpecies <- ifelse(NewDF$pGenus>0.6, NewDF$pSpecies, NA)
 	write.table(NewDF, args[3], row.names = FALSE, col.names = FALSE, sep=",", quote=FALSE) }
 
 ###########################################################################################################
@@ -112,19 +114,19 @@ if (args[5] == "SpeedGenus") { cat("\n"); print('Loading data'); cat("\n")
 	srDF$pOrder <- round((1 - predict(Omod, srDF, type = "response",allow.new.levels=TRUE)),2)	
 	cat("\n"); print('Classifying at family'); cat("\n")
 	DF$pFamily <- round((1 - predict(Fmod, DF, type = "response",allow.new.levels=TRUE)),2)
-	DF$pFamily <- ifelse(DF$pOrder > 0.85, DF$pFamily, NA)
+	DF$pFamily <- ifelse(DF$pOrder > 0.6, DF$pFamily, NA)
 	srDF$pFamily <- round((1 - predict(Fmod, srDF, type = "response",allow.new.levels=TRUE)),2)
-	srDF$pFamily <- ifelse(srDF$pOrder > 0.85, srDF$pFamily, NA)
+	srDF$pFamily <- ifelse(srDF$pOrder > 0.6, srDF$pFamily, NA)
 	cat("\n"); print('Classifying at genus'); cat("\n")
 	DF$pGenus <- round((1 - predict(Gmod, DF, type = "response",allow.new.levels=TRUE)),2)
-	DF$pGenus <- ifelse(DF$pFamily > 0.9, DF$pGenus, NA)
+	DF$pGenus <- ifelse(DF$pFamily > 0.6, DF$pGenus, NA)
 	srDF$pGenus <- round((1 - predict(srGmod, srDF, type = "response",allow.new.levels=TRUE)),2)
-	srDF$pGenus <- ifelse(srDF$pFamily > 0.9, srDF$pGenus, NA)
+	srDF$pGenus <- ifelse(srDF$pFamily > 0.6, srDF$pGenus, NA)
 	cat("\n"); print('Classifying at species'); cat("\n")
 	DF$pSpecies <- round((1 - predict(Smod, DF, type = "response",allow.new.levels=TRUE)),2)
-	DF$pSpecies <- ifelse(DF$pGenus > 0.95, DF$pSpecies, NA)
+	DF$pSpecies <- ifelse(DF$pGenus > 0.6, DF$pSpecies, NA)
 	srDF$pSpecies <- round((1 - predict(srSmod, srDF, type = "response",allow.new.levels=TRUE)),2)
-	srDF$pSpecies <- ifelse(srDF$pGenus > 0.95, srDF$pSpecies, NA)
+	srDF$pSpecies <- ifelse(srDF$pGenus > 0.6, srDF$pSpecies, NA)
 	cat("\n"); print('Formatting results'); cat("\n")
 	tmpDF <- rbind(srDF,DF)
 	NewDF <- tmpDF[,c(1,2,24,3,25,4,26,5,27,6,28,7,29,8,30)] #Since we started w/ full df of lineages/alnmt features

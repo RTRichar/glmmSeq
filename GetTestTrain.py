@@ -28,16 +28,15 @@ sys.stderr.write(FastStatus)
 
 # set number of partitions
 Parts = int(sys.argv[3])
-print(str(Parts))
+print('k-folds during test/train partitioning: ' + str(Parts))
 Prop = float(1)/int(sys.argv[3])
-print(str(Prop))
 
 # set number of seqs to retrieve
 count = {'count': 0}
 for key in fasta:
 	count['count'] += 1
 SampleSize = int(count['count'] * Prop)
-print(str(SampleSize))
+print('Test sequence case sample size: ' + str(SampleSize))
 
 # set number of partitions
 #Parts = int(1/float(sys.argv[3]))

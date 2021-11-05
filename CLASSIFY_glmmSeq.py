@@ -28,7 +28,7 @@ with open(str(DBDIR+args.Database+'/'+'InfoFile.txt'), 'r') as File:
 	print(line)
 	reStructure = line[0] 
 	HighestRank = line[1]
-	feStructure = line[2]
+	ModelStructure = line[2]
 	idCutoffs = line[3]
 	gRichness = line[4]
 	sqrt = line[5]
@@ -52,7 +52,7 @@ subprocess.call(['FrmtLineages.py', str(CTEMPDIR+'/tmp.tax'), str(CTEMPDIR+'/Aln
 
 # Run GLMM analysis and output calls and probabilities    # replace str(CTEMPDIR+'/tmp2.tax') with str(CTEMPDIR+'/tmp3.tax')
 subprocess.call(['subClassifyGLMM.r', str(CTEMPDIR+'/tmp2.tax'), str(DBDIR+args.Database+'/'), str(args.Output), HighestRank, reStructure, \
-	feStructure, idCutoffs, gRichness, sqrt])
+	ModelStructure, idCutoffs, gRichness, sqrt])
 
 # Clean up tmp
 if bool(args.SaveTemp) == False:
