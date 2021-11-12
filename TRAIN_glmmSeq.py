@@ -48,16 +48,27 @@ subprocess.call(['GetTestTrain.py', str(args.InputFasta), str(CTEMPDIR+'/'), str
 # Run Vsearch algnmnt
 sys.stderr.write('\n### ' + time.ctime(time.time()) + ': Running vsearch alignments ###\n\n')
 Parts = str(int(args.kFolds))
-for i in range(0,int(args.kFolds)): # get files for inferring percent ID of top hit taxon
-	subprocess.call(['vsearch', '--usearch_global', str(CTEMPDIR+'/'+str(i)+'_Test.fasta'), '--db', str(CTEMPDIR+'/'+str(i)+'_Train.fasta'), '--id', \
-	'0.6', '--maxaccepts', '100', '--maxrejects', '50', '--maxhits', '1', '--gapopen', '0TE', '--gapext', '0TE', '--userout', \
-	str(CTEMPDIR+'/'+str(i)+'_CV.vsrch.txt'), '--userfields', 'query+target+id+alnlen+mism+opens+qlo+qhi+tlo+thi+evalue+bits+qcov', '--query_cov', \
-	'0.95', '--threads', str(args.Threads)]) # could skip this and pull the first hit from the top 50 VSEARCH run (next line)
+
+
+################### Need to remove this and create py code to pull top hit from top 50 hits ##############
+#for i in range(0,int(args.kFolds)): # get files for inferring percent ID of top hit taxon
+#	subprocess.call(['vsearch', '--usearch_global', str(CTEMPDIR+'/'+str(i)+'_Test.fasta'), '--db', str(CTEMPDIR+'/'+str(i)+'_Train.fasta'), '--id', \
+#	'0.6', '--maxaccepts', '100', '--maxrejects', '50', '--maxhits', '1', '--gapopen', '0TE', '--gapext', '0TE', '--userout', \
+#	str(CTEMPDIR+'/'+str(i)+'_CV.vsrch.txt'), '--userfields', 'query+target+id+alnlen+mism+opens+qlo+qhi+tlo+thi+evalue+bits+qcov', '--query_cov', \
+#	'0.95', '--threads', str(args.Threads)]) # could skip this and pull the first hit from the top 50 VSEARCH run (next line)
+
+
 for i in range(0,int(args.kFolds)): # get files for inferring percent ID of second-to-top hit taxon
 	subprocess.call(['vsearch', '--usearch_global', str(CTEMPDIR+'/'+str(i)+'_Test.fasta'), '--db', str(CTEMPDIR+'/'+str(i)+'_Train.fasta'), '--id', \
 	'0.6', '--maxaccepts', '100', '--maxrejects', '50', '--maxhits', '50', '--gapopen', '0TE', '--gapext', '0TE', '--userout', \
 	str(CTEMPDIR+'/'+str(i)+'_CV_2nd.vsrch.txt'), '--userfields', 'query+target+id+alnlen+mism+opens+qlo+qhi+tlo+thi+evalue+bits+qcov', '--query_cov', \
 	'0.95', '--threads', str(args.Threads)])
+
+# get vsearch single hit file from 50 hit file
+
+
+
+
 
 # Get LogReg file
 sys.stderr.write('\n### ' + time.ctime(time.time()) + ': Formatting vsearch outputs for GLMM modelling ###\n')
