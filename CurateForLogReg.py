@@ -41,7 +41,7 @@ with open(sys.argv[3], 'r') as Covariates:
 		COVs[GI] = Info
 
 for key in PRDCT_TAX:
-	OUT.write(str(key) + ',' + ACT_TAX[key] + PRDCT_TAX[key] + ',' + COVs[key] + '\n')
+	OUT.write(str(key) + ',' + ACT_TAX[key] + PRDCT_TAX[key] + ',' + COVs[key] + '\n') # Add one more var after COVs[key], k-fold size
 
 OUT.close()
 TAX.close()

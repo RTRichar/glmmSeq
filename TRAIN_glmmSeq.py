@@ -41,6 +41,10 @@ InfoFile = str(DBDIR + '/' + 'InfoFile.txt')
 with open(InfoFile, 'w') as File:
 	File.write(args.reStructure+';'+args.HighestRank+';'+args.ModelStructure+';'+str(args.idCutoffs)+';'+str(args.gRichness)+';'+str(args.sqrt))
 
+# for i in k-fold series
+
+
+
 # Split into test train
 sys.stderr.write('\n### ' + time.ctime(time.time()) + ': Partitioning k-fold testing/training sets ###\n')
 subprocess.call(['GetTestTrain.py', str(args.InputFasta), str(CTEMPDIR+'/'), str(args.kFolds)])
@@ -49,38 +53,42 @@ subprocess.call(['GetTestTrain.py', str(args.InputFasta), str(CTEMPDIR+'/'), str
 sys.stderr.write('\n### ' + time.ctime(time.time()) + ': Running vsearch alignments ###\n\n')
 Parts = str(int(args.kFolds))
 
-
 ################### Need to remove this and create py code to pull top hit from top 50 hits ##############
 #for i in range(0,int(args.kFolds)): # get files for inferring percent ID of top hit taxon
 #	subprocess.call(['vsearch', '--usearch_global', str(CTEMPDIR+'/'+str(i)+'_Test.fasta'), '--db', str(CTEMPDIR+'/'+str(i)+'_Train.fasta'), '--id', \
 #	'0.6', '--maxaccepts', '100', '--maxrejects', '50', '--maxhits', '1', '--gapopen', '0TE', '--gapext', '0TE', '--userout', \
 #	str(CTEMPDIR+'/'+str(i)+'_CV.vsrch.txt'), '--userfields', 'query+target+id+alnlen+mism+opens+qlo+qhi+tlo+thi+evalue+bits+qcov', '--query_cov', \
 #	'0.95', '--threads', str(args.Threads)]) # could skip this and pull the first hit from the top 50 VSEARCH run (next line)
-
-
 for i in range(0,int(args.kFolds)): # get files for inferring percent ID of second-to-top hit taxon
 	subprocess.call(['vsearch', '--usearch_global', str(CTEMPDIR+'/'+str(i)+'_Test.fasta'), '--db', str(CTEMPDIR+'/'+str(i)+'_Train.fasta'), '--id', \
 	'0.6', '--maxaccepts', '100', '--maxrejects', '50', '--maxhits', '50', '--gapopen', '0TE', '--gapext', '0TE', '--userout', \
 	str(CTEMPDIR+'/'+str(i)+'_CV_2nd.vsrch.txt'), '--userfields', 'query+target+id+alnlen+mism+opens+qlo+qhi+tlo+thi+evalue+bits+qcov', '--query_cov', \
 	'0.95', '--threads', str(args.Threads)])
 
+# combine vsrch outs into single file
+subprocess.call(['CombineCVs.py', str(CTEMPDIR), Parts, 'CV_2nd.vsrch.txt'])
+
 # get vsearch single hit file from 50 hit file
-
-
-
-
+subprocess.call(['GetVsrchTopHit.py', str(CTEMPDIR+'/CV_2nd.vsrch.txt'), str(CTEMPDIR+'/CV.vsrch.txt')])
 
 # Get LogReg file
 sys.stderr.write('\n### ' + time.ctime(time.time()) + ': Formatting vsearch outputs for GLMM modelling ###\n')
-subprocess.call(['CombineCVs.py', str(CTEMPDIR), Parts, 'CV.vsrch.txt'])
+#subprocess.call(['CombineCVs.py', str(CTEMPDIR), Parts, 'CV.vsrch.txt'])
 subprocess.call(['VsearchToMetaxa2.py', '-v', str(CTEMPDIR+'/CV.vsrch.txt'), '-t', args.InputTax, '-o', str(CTEMPDIR+'/CV.mtxa.tax')])
 
 ##############
-subprocess.call(['CombineCVs.py', str(CTEMPDIR), Parts, 'CV_2nd.vsrch.txt'])
+#subprocess.call(['CombineCVs.py', str(CTEMPDIR), Parts, 'CV_2nd.vsrch.txt'])
 subprocess.call(['Get2ndHitTaxID_TRAIN.py', args.InputTax, str(CTEMPDIR+'/CV_2nd.vsrch.txt'), str(CTEMPDIR+'/CV_2nd.vsrch.csv')])
 ##############
 
 subprocess.call(['CurateForLogReg.py', str(CTEMPDIR+'/CV.mtxa.tax'), args.InputTax, str(CTEMPDIR+'/CV_2nd.vsrch.csv'), str(CTEMPDIR+'/CV.LogReg.csv')])
+
+
+# combine all x LogReg files
+# adjust subModel file with rando effect for k-fold size
+# if k-fold series greater than 1, combine into one file, No headers
+
+
 
 # R file to train on LogReg (must save ModGLMM:
 sys.stderr.write('\n### ' + time.ctime(time.time()) + ': Modelling data with binomial GLMMs ###\n\n')
