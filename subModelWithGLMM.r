@@ -28,7 +28,9 @@ ModSummary <- function(x,r) {
 
 # import data, name columns
 CV <- read.csv(args[1], header=FALSE, na.strings=c("","NA"))
-colnames(CV) <- c('GI','kReal','pReal','cReal','oReal','fReal','gReal','sReal','kPred','pPred','cPred','oPred','fPred','gPred','sPred','NA','Length','TopID','oScndID','fScndID','gScndID','sScndID','oTpHts','fTpHts','gTpHts','sTpHts')
+colnames(CV) <- c('GI','kReal','pReal','cReal','oReal','fReal','gReal','sReal','kPred','pPred','cPred','oPred','fPred','gPred','sPred','NA','Length','TopID','oScndID','fScndID','gScndID','sScndID','oTpHts','fTpHts','gTpHts','sTpHts','k')
+
+print(levels(CV$k))
 
 # Transform if specified
 for (i in 1:8) { print(args[i]) }

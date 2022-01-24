@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# sys.argv[1]: input predicted taxonomies, sys.argv[2]: actual taxonomies, sys.argv[3]: Covariates table , sys.argv[4]: outfile name
+# sys.argv[1]: input predicted taxonomies, sys.argv[2]: actual taxonomies, sys.argv[3]: Covariates table , sys.argv[4]: outfile name, argv[5]: k
 
 import sys
 
@@ -41,7 +41,7 @@ with open(sys.argv[3], 'r') as Covariates:
 		COVs[GI] = Info
 
 for key in PRDCT_TAX:
-	OUT.write(str(key) + ',' + ACT_TAX[key] + PRDCT_TAX[key] + ',' + COVs[key] + '\n') # Add one more var after COVs[key], k-fold size
+	OUT.write(str(key) + ',' + ACT_TAX[key] + PRDCT_TAX[key] + ',' + COVs[key] + ',' + str(sys.argv[5]) + '\n')
 
 OUT.close()
 TAX.close()

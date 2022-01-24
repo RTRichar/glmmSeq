@@ -13,7 +13,7 @@ required.add_argument('-odb', '--OutputDB', required = True, help = "\n Name of 
 optional.add_argument('-t', '--Threads', required = False, default = 1, help = "\n Number of processors (only affects vsearch alignment speed)\n")
 optional.add_argument('--SaveTemp', default=False, type=lambda x: (str(x).lower() == 'true'), help = "\n Option for saving intermediate files produced during training (e.g. fasta k-fold partitions and csv formatted cross validation resulst used for glmm fitting). Must be 'True/False,' not 'TRUE/FALSE' or 'T/F.'\n")
 optional.add_argument('-id', '--idCutoffs', required = False, default = '30,40,50,60,70,80,85', help = "\n Option for specifying the minimum percent identity of Vsearch alignment matches to be used for glmm fitting. This is adjustable at each taxonomic rank and consists of a comma-separated list of 7 numbers representing the threshold used from kingdom to species (e.g the default of 30,40,50,60,70,80,85 means alignments of < 30 percent ID will not be used during glmm modelling at the kigdom rank) \n")
-optional.add_argument('-k', '--kFolds', required = False, default = 10, help = "\n Number of k-folds partitions to use during reference cross-alignment and glmm modelling")
+optional.add_argument('-k', '--kFolds', required = False, default = '3,12', help = "\n Number of k-folds partitions to use during reference cross-alignment and glmm modelling")
 #### change -pcv  to -k 
 optional.add_argument('-hr', '--HighestRank', required = False, type=str, default = 'Order', help = "\n Specifies the lowest resolution rank to be classified (Kingdom, Phylum, Class, or Order). Default = Class")
 optional.add_argument('-re', '--reStructure', required = False, type=str, default = 'Family', help = "\n Specifies the random effect strucutre to used during modelling. Options include 'Family', 'Genus' and 'SpeedGenus'. 'SpeedGenus' splits cases according to whether they are in species-rich genera. For cases within species rich genera, genus and species models include (1|Order/Family/Genus) as random effect. For non-species-rich genera, random effect term is (1|Class/Order/Family). Default = SpeedGenus")
@@ -41,58 +41,40 @@ InfoFile = str(DBDIR + '/' + 'InfoFile.txt')
 with open(InfoFile, 'w') as File:
 	File.write(args.reStructure+';'+args.HighestRank+';'+args.ModelStructure+';'+str(args.idCutoffs)+';'+str(args.gRichness)+';'+str(args.sqrt))
 
-# for i in k-fold series
+kFolds = str(args.kFolds).split(',')
+for k in kFolds: # for i in k-fold series
+	# Split into test train
+	sys.stderr.write('\n'+time.ctime(time.time())+': Partitioning k-fold testing/training sets -- k-folds = '+str(k)+'\n')
+	subprocess.call(['GetTestTrain.py', str(args.InputFasta), str(CTEMPDIR+'/'+str(k)+'Fold'), str(k)])
+	# Run Vsearch algnmnt
+	sys.stderr.write('\n### ' + time.ctime(time.time()) + ': Running vsearch alignments ###\n\n')
+	for i in range(0,int(k)): # get files for inferring percent ID of second-to-top hit taxon
+		subprocess.call(['vsearch', '--usearch_global', str(CTEMPDIR+'/'+str(k)+'Fold'+str(i)+'_Test.fasta'), '--db', \
+		str(CTEMPDIR+'/'+str(k)+'Fold'+str(i)+'_Train.fasta'), '--id', '0.6', '--maxaccepts', '100', '--maxrejects', '50', '--maxhits', '50', \
+		'--gapopen', '0TE', '--gapext', '0TE', '--userout', str(CTEMPDIR+'/'+str(k)+'Fold'+str(i)+'_CV_2nd.vsrch.txt'), '--userfields', \
+		'query+target+id+alnlen+mism+opens+qlo+qhi+tlo+thi+evalue+bits+qcov', '--query_cov', '0.95', '--threads', str(args.Threads)])
+	# combine vsrch outs into single file
+	subprocess.call(['CombineCVs.py', str(CTEMPDIR), str(k), '_CV_2nd.vsrch.txt']) # need to change inputs to explicit input output names
+	# get vsearch single hit file from 50 hit file 
+	subprocess.call(['GetVsrchTopHit.py', str(CTEMPDIR+'/'+str(k)+'Fold_CV_2nd.vsrch.txt'), str(CTEMPDIR+'/'+str(k)+'Fold_CV.vsrch.txt')])
+	# Get LogReg file
+	sys.stderr.write('\n### ' + time.ctime(time.time()) + ': Formatting vsearch outputs for GLMM modelling ###\n')
+	subprocess.call(['VsearchToMetaxa2.py', '-v',str(CTEMPDIR+'/'+str(k)+'Fold_CV.vsrch.txt'),'-t',args.InputTax,'-o', str(CTEMPDIR+'/'+str(k)+'Fold_CV.mtxa.tax')])
+	# 
+	subprocess.call(['Get2ndHitTaxID_TRAIN.py', args.InputTax, str(CTEMPDIR+'/'+str(k)+'Fold_CV_2nd.vsrch.txt'), str(CTEMPDIR+'/'+str(k)+'Fold_CV_2nd.vsrch.csv')])
+	#
+	subprocess.call(['CurateForLogReg.py',str(CTEMPDIR+'/'+str(k)+'Fold_CV.mtxa.tax'),args.InputTax,str(CTEMPDIR+'/'+str(k)+'Fold_CV_2nd.vsrch.csv'),str(CTEMPDIR+'/'+str(k)+'Fold_CV.LogReg.csv'),str(k)])
 
-
-
-# Split into test train
-sys.stderr.write('\n### ' + time.ctime(time.time()) + ': Partitioning k-fold testing/training sets ###\n')
-subprocess.call(['GetTestTrain.py', str(args.InputFasta), str(CTEMPDIR+'/'), str(args.kFolds)])
-
-# Run Vsearch algnmnt
-sys.stderr.write('\n### ' + time.ctime(time.time()) + ': Running vsearch alignments ###\n\n')
-Parts = str(int(args.kFolds))
-
-################### Need to remove this and create py code to pull top hit from top 50 hits ##############
-#for i in range(0,int(args.kFolds)): # get files for inferring percent ID of top hit taxon
-#	subprocess.call(['vsearch', '--usearch_global', str(CTEMPDIR+'/'+str(i)+'_Test.fasta'), '--db', str(CTEMPDIR+'/'+str(i)+'_Train.fasta'), '--id', \
-#	'0.6', '--maxaccepts', '100', '--maxrejects', '50', '--maxhits', '1', '--gapopen', '0TE', '--gapext', '0TE', '--userout', \
-#	str(CTEMPDIR+'/'+str(i)+'_CV.vsrch.txt'), '--userfields', 'query+target+id+alnlen+mism+opens+qlo+qhi+tlo+thi+evalue+bits+qcov', '--query_cov', \
-#	'0.95', '--threads', str(args.Threads)]) # could skip this and pull the first hit from the top 50 VSEARCH run (next line)
-for i in range(0,int(args.kFolds)): # get files for inferring percent ID of second-to-top hit taxon
-	subprocess.call(['vsearch', '--usearch_global', str(CTEMPDIR+'/'+str(i)+'_Test.fasta'), '--db', str(CTEMPDIR+'/'+str(i)+'_Train.fasta'), '--id', \
-	'0.6', '--maxaccepts', '100', '--maxrejects', '50', '--maxhits', '50', '--gapopen', '0TE', '--gapext', '0TE', '--userout', \
-	str(CTEMPDIR+'/'+str(i)+'_CV_2nd.vsrch.txt'), '--userfields', 'query+target+id+alnlen+mism+opens+qlo+qhi+tlo+thi+evalue+bits+qcov', '--query_cov', \
-	'0.95', '--threads', str(args.Threads)])
-
-# combine vsrch outs into single file
-subprocess.call(['CombineCVs.py', str(CTEMPDIR), Parts, 'CV_2nd.vsrch.txt'])
-
-# get vsearch single hit file from 50 hit file
-subprocess.call(['GetVsrchTopHit.py', str(CTEMPDIR+'/CV_2nd.vsrch.txt'), str(CTEMPDIR+'/CV.vsrch.txt')])
-
-# Get LogReg file
-sys.stderr.write('\n### ' + time.ctime(time.time()) + ': Formatting vsearch outputs for GLMM modelling ###\n')
-#subprocess.call(['CombineCVs.py', str(CTEMPDIR), Parts, 'CV.vsrch.txt'])
-subprocess.call(['VsearchToMetaxa2.py', '-v', str(CTEMPDIR+'/CV.vsrch.txt'), '-t', args.InputTax, '-o', str(CTEMPDIR+'/CV.mtxa.tax')])
-
-##############
-#subprocess.call(['CombineCVs.py', str(CTEMPDIR), Parts, 'CV_2nd.vsrch.txt'])
-subprocess.call(['Get2ndHitTaxID_TRAIN.py', args.InputTax, str(CTEMPDIR+'/CV_2nd.vsrch.txt'), str(CTEMPDIR+'/CV_2nd.vsrch.csv')])
-##############
-
-subprocess.call(['CurateForLogReg.py', str(CTEMPDIR+'/CV.mtxa.tax'), args.InputTax, str(CTEMPDIR+'/CV_2nd.vsrch.csv'), str(CTEMPDIR+'/CV.LogReg.csv')])
-
+# Combine LogReg files from each kFold used
+subprocess.call(['CombineLogRegs.py',str(CTEMPDIR),str(args.kFolds)])
 
 # combine all x LogReg files
 # adjust subModel file with rando effect for k-fold size
 # if k-fold series greater than 1, combine into one file, No headers
 
-
-
 # R file to train on LogReg (must save ModGLMM:
 sys.stderr.write('\n### ' + time.ctime(time.time()) + ': Modelling data with binomial GLMMs ###\n\n')
-subprocess.call(['subModelWithGLMM.r', str(CTEMPDIR+'/CV.LogReg.csv'), DBDIR, args.reStructure, args.HighestRank, \
+subprocess.call(['subModelWithGLMM.r', str(CTEMPDIR+'/FinalLogReg.csv'), DBDIR, args.reStructure, args.HighestRank, \
 	args.ModelStructure, str(args.idCutoffs), str(args.gRichness), str(args.sqrt)])
 
 # save consensus filtered fasta and tax to db directory under 'DB.fa' and 'DB.tax'

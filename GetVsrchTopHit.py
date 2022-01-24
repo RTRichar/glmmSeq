@@ -4,6 +4,9 @@
 
 import sys
 
+# not TRAIN_tmp_Nov_25_07_42_38_2021/3FoldCV_2nd.vsrch.txt
+# should be 
+
 # after combining all vsearch files, open combined file
 # Scroll through and pick top hit for each query, add it to list
 # add first Q to list
